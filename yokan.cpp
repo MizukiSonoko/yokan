@@ -1,7 +1,11 @@
 #include <iostream>
 #include <string>
+#include <list>
 #include <vector>
+#include <stack>
 #include <map>
+
+#include "kushi.hpp"
 
 class Token{
   public:
@@ -40,6 +44,7 @@ class Token{
 };
 
 std::map<std::string, int> values;
+std::list<Token>  tokens;
 
 auto isLetter(char c)
  -> bool{
@@ -66,12 +71,23 @@ auto isSpecial(char c)
 }
 
 auto lexer(std::string aLine)
- -> std::vector<Token>{
-	std::vector<Token> tokens;
+ -> std::list<Token>{
+	std::list<Token> tokens;
 
+    bool isString = false;
 	std::string buffer = "";
     for(auto c : aLine){
 
+        if(isString){   
+            if(c=='"'){
+                tokens.push_back(Token(Token::NAME,buffer));
+                buffer = "";
+                isString = false;
+                continue;
+            }
+            buffer += c;
+            continue;
+        }
         if(isLetter(c)||isNumber(c)){
             buffer += c;
             continue;
@@ -98,6 +114,16 @@ auto lexer(std::string aLine)
 			    	buffer = "";
 			    }
 		    	break;
+            case '"':
+                isString = true;
+                if(!buffer.empty()){
+                    if(isNumber(buffer.at(0)))
+                        tokens.push_back(Token(Token::NUMBER,buffer));
+                    else
+                        tokens.push_back(Token(Token::NAME,buffer));
+                    buffer = "";
+                }                
+                break;
             case '(':
                 tokens.push_back(Token(Token::LPARENT,"("));
                 break;
@@ -115,9 +141,6 @@ auto lexer(std::string aLine)
                 break;
             case ':':
                 tokens.push_back(Token(Token::COLON,":"));
-                break;
-            case '"':
-                tokens.push_back(Token(Token::DQUOTATION,"\""));
                 break;
             case '=':
                 tokens.push_back(Token(Token::EQUAL,"="));
@@ -162,105 +185,106 @@ auto lexer(std::string aLine)
 	return tokens;
 }
 
-auto expr(std::vector<Token> tokens, int pos)
- -> int{
- 	if((tokens.at(pos).getType()==Token::NAME &&
- 	   	   values.find(tokens.at(pos).getVal()) != values.end()) ||
- 	   tokens.at(pos).getType()==Token::NUMBER){
- 		pos++;
- 		if(tokens.at(pos).getType()==Token::OPE_ADD ||
- 		   tokens.at(pos).getType()==Token::OPE_SUB ||
- 		   tokens.at(pos).getType()==Token::OPE_MUL ||
- 		   tokens.at(pos).getType()==Token::OPE_DIV){
- 			pos++;
- 			if((tokens.at(pos).getType()==Token::NAME &&
- 	   			   values.find(tokens.at(pos).getVal()) != values.end()) ||
-		 	   tokens.at(pos).getType()==Token::NUMBER){
- 				int val1, val2;		
+namespace Perser{
+    int buf_index = 0;
+    std::stack<int>       markers;
+    std::vector<Token> headTokens;
 
- 				//一つ目の変数
-	 			if(tokens.at(pos-2).getType() == Token::NAME){
-	 				val1 = values[tokens.at(pos-2).getVal()];
-	 			}else{
-	 				val1 =std::stoi(tokens.at(pos-2).getVal());
-	 			}
- 				//二つの変数
-	 			if(tokens.at(pos).getType() == Token::NAME){
-	 				val2 = values[tokens.at(pos).getVal()];
-	 			}else{
-	 				val2 =std::stoi(tokens.at(pos).getVal());
-	 			}
 
- 				//演算子
-	 			if(tokens.at(pos-1).getType() == Token::OPE_ADD){
-	 				return val1 + val2;
-	 			}else if(tokens.at(pos-1).getType() == Token::OPE_SUB){
-	 				return val1 - val2;
-	 			}else if(tokens.at(pos-1).getType() == Token::OPE_MUL){
-	 				return val1 * val2;
-	 			}else if(tokens.at(pos-1).getType() == Token::OPE_DIV){
-	 				return val1 / val2;
-	 			}
-				return -1;
-			}
- 		}else if(tokens.at(pos).getType() == Token::FIN){
- 			if(tokens.at(pos-1).getType() == Token::NAME){
- 				return values[tokens.at(pos-1).getVal()];
- 			}else{
- 				return std::stoi(tokens.at(pos).getVal());
- 			}
- 		} 		
- 	}
- 	return -1;
+    auto perser(int pos)
+     -> int{
+        return 0;
+    }
+
+
+    auto fill(int n)
+     -> bool{
+        for(int i = 0;i < n;i++){
+            headTokens.push_back(tokens.front());
+            tokens.pop_front();
+        }
+        return true;
+    }
+
+    auto sync(int i)
+     -> bool{
+        if(buf_index + i > headTokens.size()){
+            int n = (buf_index + i) - (headTokens.size());
+            fill(n);
+        }
+        return true;
+    }
+
+    auto LT(int i)
+     -> Token{        
+        sync(i);
+        return headTokens[buf_index+i-1];
+    }
+
+    auto mark()
+     -> int{
+        markers.push(buf_index);
+        return buf_index;
+    }
+
+    auto seek(int index)
+     -> bool{
+        buf_index = index;
+        return true;
+    }
+
+    auto release()
+     -> bool{
+        if(!markers.empty()){
+            int marker = markers.top();
+            markers.pop();
+            seek(marker);
+        }
+        return true;
+    }
+
+    auto isSpec()
+     -> bool{
+        return markers.size() > 0;
+    }
+
+
+    auto nextToken()
+     -> bool{
+        buf_index++;
+        if(buf_index == headTokens.size() && !isSpec()){
+            buf_index = 0;
+            headTokens.clear();
+            return false; 
+        }
+        sync(1);   
+        return true;
+    }
+
+    auto match(Token::Type type)
+     -> bool{
+        Token  token =  LT(1);     
+     //   curString = token.getName();
+        Token::Type t = token.getType();
+        if(type==t){
+            nextToken();
+            return true;
+        }else{
+            return false;
+        }
+    }
+
 }
-
-auto statement(std::vector<Token> tokens, int pos)
- -> int{
-	if(tokens.at(pos).getType()==Token::NAME){
-		if(tokens.at(pos).getVal() == "put"){
-			pos++;
-			std::cout<<values[tokens.at(pos).getVal()]<<"\n";
-			return 0;
-		}else{
-			values[tokens.at(pos).getVal()] = 0;
-			pos++;
-			if(tokens.at(pos).getType() == Token::EQUAL){
-				pos++;
-				if(expr(tokens, pos) != -1){
-					values[tokens.at(pos-2).getVal()] = expr(tokens, pos);
-					return 0;
-				}
-			}
-		}
-	}
-	return -1;
-}
-
-auto perser(std::vector<Token> tokens, int pos)
- -> int{
- 	if(statement(tokens, pos) != -1){
- 		return 0;
- 	}
- 	return -1;
-}
-
 auto main()
  -> int{	
 	std::string line;
 	while(true){
-		std::cout<<">>";
+		std::cout<<">>> ";
 		std::getline(std::cin, line);
-		auto tokens = lexer(line);
-		/*
-		for(auto token : tokens){
-			std::cout<< token.getVal() <<"\n";
-		}
-		*/
-		if(perser(tokens, 0) != -1){
-		//	std::cout<<"Syntax is correct!\n";
-		}else{
-			std::cout<<"Syntax is invalid!\n";
-		}
+		tokens = lexer(line);
+        for(auto t : tokens){
+            std::cout << t.getVal() << "\n";
+        }
 	}
 	return 0;
 }

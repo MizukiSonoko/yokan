@@ -190,12 +190,10 @@ namespace Perser{
     std::stack<int>       markers;
     std::vector<Token> headTokens;
 
-
     auto perser(int pos)
      -> int{
         return 0;
     }
-
 
     auto fill(int n)
      -> bool{
@@ -274,6 +272,31 @@ namespace Perser{
         }
     }
 
+    namespace Perse{
+
+    };
+    namespace speculate{
+        /* 
+            VariableDecl ->
+                NAME, EQUAL, NUMBER
+        */
+        auto speculate_VariableDecl()
+         -> bool{
+            bool success = true;
+            mark();
+            if(!(
+            /* Write rule */
+            match(Token::NAME) &&
+            match(Token::EQUAL) && 
+            match(Token::NUMBER) 
+            /* ---------- */
+            )){
+                success = false;
+            }
+            release();
+            return success;
+         }
+    };
 }
 auto main()
  -> int{	

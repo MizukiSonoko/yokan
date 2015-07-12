@@ -190,10 +190,6 @@ namespace Perser{
     std::stack<int>       markers;
     std::vector<Token> headTokens;
 
-    auto perser(int pos)
-     -> int{
-        return 0;
-    }
 
     auto fill(int n)
      -> bool{
@@ -272,9 +268,6 @@ namespace Perser{
         }
     }
 
-    namespace Perse{
-
-    };
     namespace speculate{
         /* 
             VariableDecl ->
@@ -297,6 +290,31 @@ namespace Perser{
             return success;
          }
     };
+
+    namespace Perser{
+
+        auto VariableDecl()
+         -> bool{
+            if(speculate::speculate_VariableDecl()){
+                match(Token::NAME);
+                match(Token::EQUAL); 
+                match(Token::NUMBER); 
+                return true;
+            }
+            return false;  
+        }
+    };
+
+    auto perser()
+     -> bool{
+        buf_index = 0;
+        while(markers.size()!=0){
+            markers.pop();
+        }
+        headTokens.clear();        
+        return Perser::VariableDecl();
+    }
+
 }
 auto main()
  -> int{	
@@ -306,8 +324,13 @@ auto main()
 		std::getline(std::cin, line);
 		tokens = lexer(line);
         for(auto t : tokens){
-            std::cout << t.getVal() << "\n";
+            std::cout << t.getVal() <<","<< t.getType() << "\n";
         }
+        if(!Perser::perser()){
+            std::cout<<"Syntax error! \n";
+            return 0;
+        }
+        tokens.clear();
 	}
 	return 0;
 }

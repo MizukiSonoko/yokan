@@ -185,6 +185,7 @@ auto lexer(std::string aLine)
 	return tokens;
 }
 
+
 namespace Perser{
     int buf_index = 0;
     std::stack<int>       markers;
@@ -268,7 +269,61 @@ namespace Perser{
         }
     }
 
+
+    namespace PerserRule{
+        bool BinaryExpr();
+        bool VariableDecl();
+        bool Statement();
+    };
+
     namespace speculate{
+
+        /* 
+            BinaryExpr ->
+                Name, OPE_ADD, Name
+        */
+        auto speculate_BinaryExpr()
+         -> int{
+            int success = 0;
+            mark();
+            if(
+                match(Token::NAME) &&
+                match(Token::OPE_ADD) &&
+                match(Token::NAME)
+            ){
+                success = 1;
+            }else if(
+                match(Token::NAME) &&
+                match(Token::OPE_ADD) &&
+                match(Token::NUMBER)
+            ){
+                success = 2;
+            }
+            release();
+            return success;
+        }
+
+        /* 
+            Statement ->
+                VariableDecl,
+        */
+        auto speculate_Statement()
+         -> int{
+            int success = 0;
+            mark();
+            if(
+                PerserRule::VariableDecl()
+            ){
+                success = 1;
+            }else if(
+                PerserRule::BinaryExpr()
+            ){
+                success = 2;
+            }
+            release();
+            return success;
+        }
+
         /* 
             VariableDecl ->
                 NAME, EQUAL, NUMBER
@@ -291,7 +346,39 @@ namespace Perser{
          }
     };
 
-    namespace Perser{
+    namespace PerserRule{
+
+        auto BinaryExpr()
+         -> bool{
+            switch(speculate::speculate_BinaryExpr()){
+                case 1:
+                    match(Token::NAME);
+                    match(Token::OPE_ADD);
+                    match(Token::NAME);
+                    return true;
+                case 2:
+                    match(Token::NAME);
+                    match(Token::OPE_ADD);
+                    match(Token::NUMBER);
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        auto Statement()
+         -> bool{
+            switch(speculate::speculate_Statement()){
+                case 1:
+                    VariableDecl();
+                    return true;
+                case 2:
+                    BinaryExpr();
+                    return true;
+                default:
+                    return false;
+            }
+        }
 
         auto VariableDecl()
          -> bool{
@@ -312,7 +399,7 @@ namespace Perser{
             markers.pop();
         }
         headTokens.clear();        
-        return Perser::VariableDecl();
+        return PerserRule::Statement();
     }
 
 }

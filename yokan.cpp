@@ -5,12 +5,15 @@
 #include <stack>
 #include <map>
 
+#include <cstdarg>
+
 #include "kushi.hpp"
 
 class Token{
   public:
     enum Type{
-        MARGIN=-1,
+        ERROR = -1,
+        MARGIN,
         FIN,
         NAME,
         NUMBER,
@@ -42,6 +45,31 @@ class Token{
   private:
     std::string name;
     Type type;
+};
+
+class TypeSet{
+    std::vector<Token::Type> types;
+  public:
+    TypeSet(Token::Type type){
+        types.push_back(type);
+    }
+    ~TypeSet(){
+        std::cout<<"~~~~~~~~~~~~~~~~~~~DESTRUCTOR\n";
+    }
+    TypeSet* OR(Token::Type type){
+        types.push_back(type);
+        return this;
+    }
+    int size(){
+        return types.size();
+    }
+    Token::Type at(int pos){
+        if(pos < this ->size()){
+            return types[pos];
+        }
+        return Token::ERROR;
+    }
+
 };
 
 std::map<std::string, int> values;
@@ -284,6 +312,22 @@ namespace Perser{
         }
     }
 
+    auto match(TypeSet* typeSet)
+     -> bool{
+        Token  token =  LT(1);     
+     
+        curString = token.getName();
+        log(3,"cur:" + curString );
+
+        for(int i = 0; i < typeSet->size(); i++){
+            Token::Type t = typeSet->at(i);
+            if(match(t)){
+                return true;
+            }
+        }
+        return false;
+    }    
+
     auto defVariable(std::string val_name)
      -> bool{
         if(variableTable.find(val_name) == variableTable.end()){
@@ -312,7 +356,10 @@ namespace Perser{
             mark();
             if(
                 match(Token::NAME) &&
-                match(Token::OPE_ADD) &&
+                match(
+                    (new TypeSet(Token::OPE_ADD))->
+                        OR(Token::OPE_SUB)
+                ) &&
                 PerserRule::BinaryExpr() != -1
             ){
                 success = 5;
@@ -325,7 +372,10 @@ namespace Perser{
             mark();
             if(
                 match(Token::NAME) &&
-                match(Token::OPE_ADD) &&
+                match(
+                    (new TypeSet(Token::OPE_ADD))->
+                        OR(Token::OPE_SUB)
+                ) &&
                 match(Token::NAME)
             ){
                 success = 1;
@@ -338,7 +388,10 @@ namespace Perser{
             mark();
             if(
                 match(Token::NAME) &&
-                match(Token::OPE_ADD) &&
+                match(
+                    (new TypeSet(Token::OPE_ADD))->
+                        OR(Token::OPE_SUB)
+                ) &&
                 match(Token::NUMBER)
             ){
                 success = 2;
@@ -351,7 +404,10 @@ namespace Perser{
             mark();
             if(
                 match(Token::NUMBER) &&
-                match(Token::OPE_ADD) &&
+                match(
+                    (new TypeSet(Token::OPE_ADD))->
+                        OR(Token::OPE_SUB)
+                ) &&
                 match(Token::NUMBER)
             ){
                 success = 3;
@@ -364,7 +420,10 @@ namespace Perser{
             mark();
             if(
                 match(Token::NUMBER) &&
-                match(Token::OPE_ADD) &&
+                match(
+                    (new TypeSet(Token::OPE_ADD))->
+                        OR(Token::OPE_SUB)
+                ) &&
                 match(Token::NAME)
             ){
                 success = 4;
@@ -461,7 +520,11 @@ namespace Perser{
                         log(3,"Error undefined:["+curString+"] !!");
                         return -1;
                     }
-                    match(Token::OPE_ADD);
+
+                    match(
+                        (new TypeSet(Token::OPE_ADD))->
+                            OR(Token::OPE_SUB)
+                    );
 
                     match(Token::NAME);
                     if(defVariable(curString)){
@@ -482,7 +545,10 @@ namespace Perser{
                         return -1;
                     }
 
-                    match(Token::OPE_ADD);
+                    match(
+                    (new TypeSet(Token::OPE_ADD))->
+                        OR(Token::OPE_SUB)
+                    );
 
                     match(Token::NUMBER);
                     _r_val = std::stoi(curString);
@@ -493,7 +559,10 @@ namespace Perser{
                     match(Token::NUMBER);
                     _l_val = std::stoi(curString);
 
-                    match(Token::OPE_ADD);
+                    match(
+                    (new TypeSet(Token::OPE_ADD))->
+                        OR(Token::OPE_SUB)
+                    );
 
                     match(Token::NUMBER);
                     _r_val = std::stoi(curString);
@@ -504,7 +573,10 @@ namespace Perser{
                     match(Token::NUMBER);
                     _l_val = std::stoi(curString);
 
-                    match(Token::OPE_ADD);
+                    match(
+                    (new TypeSet(Token::OPE_ADD))->
+                        OR(Token::OPE_SUB)
+                    );
 
                     match(Token::NAME);
                     if(defVariable(curString)){
@@ -521,7 +593,10 @@ namespace Perser{
                     match(Token::NAME);
                     _l_val = variableTable[curString];
 
-                    match(Token::OPE_ADD);
+                    match(
+                    (new TypeSet(Token::OPE_ADD))->
+                        OR(Token::OPE_SUB)
+                    );
 
                     _r_val = BinaryExpr();
                     if(_r_val != -1){

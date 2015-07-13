@@ -6,6 +6,7 @@
 #include <map>
 
 #include <cstdarg>
+#include <memory>
 
 #include "kushi.hpp"
 
@@ -355,28 +356,17 @@ namespace Perser{
             int success = 0;
             mark();
             if(
-                match(Token::NAME) &&
+                match(
+                    (new TypeSet(Token::NAME))->
+                        OR(Token::NUMBER)
+                ) &&
                 match(
                     (new TypeSet(Token::OPE_ADD))->
-                        OR(Token::OPE_SUB)
+                        OR(Token::OPE_SUB)->
+                        OR(Token::OPE_DIV)->
+                        OR(Token::OPE_MUL)
                 ) &&
                 PerserRule::BinaryExpr() != -1
-            ){
-                success = 5;
-                release();
-                log(2,"speculate_BinaryExpr (5)- success");                
-                return success;
-            }
-            release();
-
-            mark();
-            if(
-                match(Token::NAME) &&
-                match(
-                    (new TypeSet(Token::OPE_ADD))->
-                        OR(Token::OPE_SUB)
-                ) &&
-                match(Token::NAME)
             ){
                 success = 1;
                 release();
@@ -387,48 +377,24 @@ namespace Perser{
 
             mark();
             if(
-                match(Token::NAME) &&
+                match(
+                    (new TypeSet(Token::NAME))->
+                        OR(Token::NUMBER)
+                ) &&
                 match(
                     (new TypeSet(Token::OPE_ADD))->
-                        OR(Token::OPE_SUB)
+                        OR(Token::OPE_SUB)->
+                        OR(Token::OPE_DIV)->
+                        OR(Token::OPE_MUL)
                 ) &&
-                match(Token::NUMBER)
+                match(
+                    (new TypeSet(Token::NAME))->
+                        OR(Token::NUMBER)
+                )
             ){
                 success = 2;
                 release();
                 log(2,"speculate_BinaryExpr (2)- success");                
-                return success;
-            }
-            release();            
-
-            mark();
-            if(
-                match(Token::NUMBER) &&
-                match(
-                    (new TypeSet(Token::OPE_ADD))->
-                        OR(Token::OPE_SUB)
-                ) &&
-                match(Token::NUMBER)
-            ){
-                success = 3;
-                release();
-                log(2,"speculate_BinaryExpr (3)- success");
-                return success;
-            }
-            release();
-
-            mark();
-            if(
-                match(Token::NUMBER) &&
-                match(
-                    (new TypeSet(Token::OPE_ADD))->
-                        OR(Token::OPE_SUB)
-                ) &&
-                match(Token::NAME)
-            ){
-                success = 4;
-                release();
-                log(2,"speculate_BinaryExpr (4)- success");
                 return success;
             }
             release();
@@ -513,98 +479,56 @@ namespace Perser{
             switch(speculate::speculate_BinaryExpr()){
                 case 1:
                     log(1,"BinaryExpr.1"); 
-                    match(Token::NAME);
-                    if(defVariable(curString)){
-                        _l_val = variableTable[curString];
-                    }else{
-                        log(3,"Error undefined:["+curString+"] !!");
-                        return -1;
-                    }
+
+                    match(
+                    (new TypeSet(Token::NAME))->
+                        OR(Token::NUMBER)
+                    );
 
                     match(
                         (new TypeSet(Token::OPE_ADD))->
-                            OR(Token::OPE_SUB)
-                    );
-
-                    match(Token::NAME);
-                    if(defVariable(curString)){
-                        _r_val = variableTable[curString];
-                    }else{
-                        log(3,"Error undefined:["+curString+"] !!");                        
-                        return -1;
-                    }
-
-                    return _l_val + _r_val;
-                case 2:
-                    log(1,"BinaryExpr.2"); 
-                    match(Token::NAME);
-                    if(defVariable(curString)){
-                        _l_val = variableTable[curString];
-                    }else{
-                        log(3,"Error undefined:["+curString+"] !!");
-                        return -1;
-                    }
-
-                    match(
-                    (new TypeSet(Token::OPE_ADD))->
-                        OR(Token::OPE_SUB)
-                    );
-
-                    match(Token::NUMBER);
-                    _r_val = std::stoi(curString);
-
-                    return _l_val + _r_val;
-                case 3:
-                    log(1,"BinaryExpr.3"); 
-                    match(Token::NUMBER);
-                    _l_val = std::stoi(curString);
-
-                    match(
-                    (new TypeSet(Token::OPE_ADD))->
-                        OR(Token::OPE_SUB)
-                    );
-
-                    match(Token::NUMBER);
-                    _r_val = std::stoi(curString);
-
-                    return _l_val + _r_val;
-                case 4:
-                    log(1,"BinaryExpr.4"); 
-                    match(Token::NUMBER);
-                    _l_val = std::stoi(curString);
-
-                    match(
-                    (new TypeSet(Token::OPE_ADD))->
-                        OR(Token::OPE_SUB)
-                    );
-
-                    match(Token::NAME);
-                    if(defVariable(curString)){
-                        _r_val = variableTable[curString];
-                    }else{
-                        log(3,"Error undefined:["+curString+"] !!");
-                        return -1;
-                    }
-
-                    return _l_val + _r_val;
-                case 5:
-                    log(1,"BinaryExpr.5"); 
-
-                    match(Token::NAME);
-                    _l_val = variableTable[curString];
-
-                    match(
-                    (new TypeSet(Token::OPE_ADD))->
-                        OR(Token::OPE_SUB)
+                            OR(Token::OPE_SUB)->
+                            OR(Token::OPE_DIV)->
+                            OR(Token::OPE_MUL)
                     );
 
                     _r_val = BinaryExpr();
                     if(_r_val != -1){
-                        return _l_val + _r_val;
+                        return 1;
                     }else{
                         log(3,"Error undefined:["+curString+"] !!");
                         return -1;
                     }
+
+                case 2:
+                    log(1,"BinaryExpr.1"); 
+                    match(
+                    (new TypeSet(Token::NAME))->
+                        OR(Token::NUMBER)
+                    );
+
+                    match(
+                        (new TypeSet(Token::OPE_ADD))->
+                            OR(Token::OPE_SUB)->
+                            OR(Token::OPE_DIV)->
+                            OR(Token::OPE_MUL)
+                    );
+
+                    match(
+                    (new TypeSet(Token::NAME))->
+                        OR(Token::NUMBER)
+                    );
+
+/*
+                    if(defVariable(curString)){
+                        _l_val = variableTable[curString];
+                    }else{
+                        log(3,"Error undefined:["+curString+"] !!");
+                        return -1;
+                    }
+*/
+
+                    return 1;                    
                 default:
                     return -1;
             }

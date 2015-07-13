@@ -202,6 +202,7 @@ namespace Perser{
     std::vector<Token> headTokens;
     std::string         curString;
 
+    std::map<std::string, int> variableTable;
 
     auto fill(int n)
      -> bool{
@@ -254,7 +255,6 @@ namespace Perser{
         return markers.size() > 0;
     }
 
-
     auto nextToken()
      -> bool{
         buf_index++;
@@ -272,6 +272,8 @@ namespace Perser{
         Token  token =  LT(1);     
      
         curString = token.getName();
+        log(3,"cur:" + curString );
+
         Token::Type t = token.getType();
         log(1, "hope:"+std::to_string(type)+" real:"+std::to_string(t));
         if(type==t){
@@ -282,8 +284,16 @@ namespace Perser{
         }
     }
 
+    auto defVariable(std::string val_name)
+     -> bool{
+        if(variableTable.find(val_name) == variableTable.end()){
+            return false;
+        }
+        return true;
+    }
+
     namespace PerserRule{
-        bool BinaryExpr();
+        int BinaryExpr();
         bool VariableDecl();
         bool Statement();
     };
@@ -303,7 +313,7 @@ namespace Perser{
             if(
                 match(Token::NAME) &&
                 match(Token::OPE_ADD) &&
-                PerserRule::BinaryExpr()
+                PerserRule::BinaryExpr() != -1
             ){
                 success = 5;
                 release();
@@ -413,15 +423,17 @@ namespace Perser{
                 return success;
             }
             release();
-
+            log(3, "second!!!!!!!!");
             mark();
             if(
             /* Write rule */
+            match(Token::NAME) &&
+            match(Token::EQUAL) &&
             match(Token::NUMBER) &&
             match(Token::FIN)
             /* ---------- */
             ){
-                success = 1;
+                success = 2;
                 release();
                 log(2,"speculate_VariableDecl (2)- success");
                 return success;
@@ -433,56 +445,95 @@ namespace Perser{
     };
 
     namespace PerserRule{
-
+        // そのまま値をここで返すべき？
         auto BinaryExpr()
-         -> bool{
-            log(0,"BinaryExpr");    
+         -> int{
+            log(0,"BinaryExpr");  
+            int _r_val, _l_val;  
 
             switch(speculate::speculate_BinaryExpr()){
                 case 1:
                     log(1,"BinaryExpr.1"); 
                     match(Token::NAME);
+                    if(defVariable(curString)){
+                        _l_val = variableTable[curString];
+                    }else{
+                        log(3,"Error undefined:["+curString+"] !!");
+                        return -1;
+                    }
                     match(Token::OPE_ADD);
+
                     match(Token::NAME);
-                    log(3,"cur:" + curString );
-                    return true;
+                    if(defVariable(curString)){
+                        _r_val = variableTable[curString];
+                    }else{
+                        log(3,"Error undefined:["+curString+"] !!");                        
+                        return -1;
+                    }
+
+                    return _l_val + _r_val;
                 case 2:
                     log(1,"BinaryExpr.2"); 
                     match(Token::NAME);
+                    if(defVariable(curString)){
+                        _l_val = variableTable[curString];
+                    }else{
+                        log(3,"Error undefined:["+curString+"] !!");
+                        return -1;
+                    }
+
                     match(Token::OPE_ADD);
+
                     match(Token::NUMBER);
-                    log(3,"cur:" + curString );
-                    return true;
+                    _r_val = std::stoi(curString);
+
+                    return _l_val + _r_val;
                 case 3:
                     log(1,"BinaryExpr.3"); 
                     match(Token::NUMBER);
+                    _l_val = std::stoi(curString);
+
                     match(Token::OPE_ADD);
+
                     match(Token::NUMBER);
-                    log(3,"cur:" + curString );
-                    return true;
+                    _r_val = std::stoi(curString);
+
+                    return _l_val + _r_val;
                 case 4:
                     log(1,"BinaryExpr.4"); 
                     match(Token::NUMBER);
-                    match(Token::OPE_ADD);
-                    match(Token::NAME);
-                    log(3,"cur:" + curString );
-                    return true;
+                    _l_val = std::stoi(curString);
 
+                    match(Token::OPE_ADD);
+
+                    match(Token::NAME);
+                    if(defVariable(curString)){
+                        _r_val = variableTable[curString];
+                    }else{
+                        log(3,"Error undefined:["+curString+"] !!");
+                        return -1;
+                    }
+
+                    return _l_val + _r_val;
                 case 5:
                     log(1,"BinaryExpr.5"); 
 
                     match(Token::NAME);
-                    log(3,"cur:" + curString );
+                    _l_val = variableTable[curString];
 
                     match(Token::OPE_ADD);
-                    log(3,"cur:" + curString );
 
-                    BinaryExpr();
-                    log(3,"cur:" + curString );
-                    return true;
+                    _r_val = BinaryExpr();
+                    if(_r_val != -1){
+                        return _l_val + _r_val;
+                    }else{
+                        log(3,"Error undefined:["+curString+"] !!");
+                        return -1;
+                    }
                 default:
-                    return false;
+                    return -1;
             }
+            return -1;
         }
 
         auto Statement()
@@ -502,33 +553,38 @@ namespace Perser{
          -> bool{
             log(1,"VariableDecl");
 
+            std::string val_name;
+            int _value;
+
             switch(speculate::speculate_VariableDecl()){
                 case 1:
                     match(Token::NAME);
-                    log(3,"cur:" + curString );
+                    val_name = curString;
 
                     match(Token::EQUAL); 
-                    log(3,"cur:" + curString );
 
-                    BinaryExpr();
-                    log(3,"cur:" + curString );
+                    _value = BinaryExpr();
+                    if(_value == -1){
+                        return false;
+                    }
 
                     match(Token::FIN);
-                    log(3,"cur:" + curString );
-
+                    std::cout<<"[Value]:"+std::to_string(_value)<<"\n";
+                    variableTable[val_name] = _value;
                     return true;
                 case 2:
+
                     match(Token::NAME);
-                    log(3,"cur:" + curString );
+                    val_name = curString;
 
                     match(Token::EQUAL); 
-                    log(3,"cur:" + curString );
 
                     match(Token::NUMBER);
-                    log(3,"cur:" + curString );
+                    std::cout<<"[Value]~:"<<curString<<"\n";
+                    variableTable[val_name] = std::stoi(curString);
+                    std::cout<<"[Value]"<<val_name<<"="<<curString<<"\n";
 
                     match(Token::FIN);
-                    log(3,"cur:" + curString );
 
                     return true;
                 default:

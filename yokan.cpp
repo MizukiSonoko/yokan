@@ -35,7 +35,7 @@ class Token{
     Type getType(){
     	return type;
 	}
-    std::string getVal(){
+    std::string getName(){
     	return name;
 	}
   private:
@@ -185,11 +185,18 @@ auto lexer(std::string aLine)
 	return tokens;
 }
 
+void log(int layour, std::string msg){
+    for(int i=0; i < layour; i++){
+        std::cout<< " ";
+    }
+    std::cout<< msg <<"\n";
+}
 
 namespace Perser{
     int buf_index = 0;
     std::stack<int>       markers;
     std::vector<Token> headTokens;
+    std::string         curString;
 
 
     auto fill(int n)
@@ -259,7 +266,9 @@ namespace Perser{
     auto match(Token::Type type)
      -> bool{
         Token  token =  LT(1);     
-     //   curString = token.getName();
+     
+        curString = token.getName();
+
         Token::Type t = token.getType();
         if(type==t){
             nextToken();
@@ -284,6 +293,8 @@ namespace Perser{
         */
         auto speculate_BinaryExpr()
          -> int{
+            log(1,"speculate_BinaryExpr");
+
             int success = 0;
             mark();
             if(
@@ -292,14 +303,25 @@ namespace Perser{
                 match(Token::NAME)
             ){
                 success = 1;
-            }else if(
-                match(Token::NAME) &&
-                match(Token::OPE_ADD) &&
-                match(Token::NUMBER)
-            ){
-                success = 2;
+                release();
+                log(2,"speculate_BinaryExpr (1)- success");                
+                return success;
             }
             release();
+            mark();
+            if(
+                match(Token::NAME) &&
+                match(Token::OPE_ADD) &&
+                match(Token::NUMBER)                
+            ){
+                success = 2;
+                release();
+                log(2,"speculate_BinaryExpr (2)- success");
+                return success;
+            }
+
+            release();
+            log(2,"speculate_BinaryExpr - failed");            
             return success;
         }
 
@@ -309,18 +331,19 @@ namespace Perser{
         */
         auto speculate_Statement()
          -> int{
+            log(1,"speculate_Statement");
             int success = 0;
             mark();
             if(
                 PerserRule::VariableDecl()
             ){
                 success = 1;
-            }else if(
-                PerserRule::BinaryExpr()
-            ){
-                success = 2;
+                release();
+                log(2,"speculate_Statement - success");
+                return success;
             }
             release();
+            log(2,"speculate_Statement - failed");
             return success;
         }
 
@@ -329,19 +352,45 @@ namespace Perser{
                 NAME, EQUAL, NUMBER
         */
         auto speculate_VariableDecl()
-         -> bool{
-            bool success = true;
+         -> int{
+            log(1,"speculate_VariableDecl");
+            int success = 0;
             mark();
-            if(!(
+
+
+            if(
             /* Write rule */
             match(Token::NAME) &&
             match(Token::EQUAL) && 
-            match(Token::NUMBER) 
+            PerserRule::BinaryExpr() &&
+            match(Token::SEMICOLON)
             /* ---------- */
-            )){
-                success = false;
+            ){
+                success = 1;
+                release();
+                log(2,"speculate_VariableDecl (1)- success");
+                return success;
             }
+
             release();
+            mark();
+
+            if(
+            /* Write rule */
+            match(Token::NAME) &&
+            match(Token::EQUAL) && 
+            match(Token::NUMBER) &&
+            match(Token::SEMICOLON)
+            /* ---------- */
+            ){
+                success = 1;
+                release();
+                log(2,"speculate_VariableDecl (2)- success");
+                return success;
+            }
+
+            release();
+            log(2,"speculate_VariableDecl - failed");
             return success;
          }
     };
@@ -350,16 +399,32 @@ namespace Perser{
 
         auto BinaryExpr()
          -> bool{
+            log(0,"BinaryExpr");    
+
             switch(speculate::speculate_BinaryExpr()){
                 case 1:
+
+                    log(1,"BinaryExpr.1"); 
                     match(Token::NAME);
+                    log(3,"cur:" + curString );
+        
                     match(Token::OPE_ADD);
+                    log(3,"cur:" + curString );
+        
                     match(Token::NAME);
+                    log(3,"cur:" + curString );
                     return true;
                 case 2:
+                    log(1,"BinaryExpr.1"); 
+
                     match(Token::NAME);
+                    log(3,"cur:" + curString );
+
                     match(Token::OPE_ADD);
+                    log(3,"cur:" + curString );
+
                     match(Token::NUMBER);
+                    log(3,"cur:" + curString );
                     return true;
                 default:
                     return false;
@@ -368,12 +433,11 @@ namespace Perser{
 
         auto Statement()
          -> bool{
+            log(0,"Statement");            
             switch(speculate::speculate_Statement()){
                 case 1:
+                    log(1,"Statement.VariableDecl"); 
                     VariableDecl();
-                    return true;
-                case 2:
-                    BinaryExpr();
                     return true;
                 default:
                     return false;
@@ -382,11 +446,39 @@ namespace Perser{
 
         auto VariableDecl()
          -> bool{
-            if(speculate::speculate_VariableDecl()){
-                match(Token::NAME);
-                match(Token::EQUAL); 
-                match(Token::NUMBER); 
-                return true;
+            log(1,"VariableDecl");
+
+            switch(speculate::speculate_VariableDecl()){
+                case 1:
+                    match(Token::NAME);
+                    log(3,"cur:" + curString );
+
+                    match(Token::EQUAL); 
+                    log(3,"cur:" + curString );
+
+                    BinaryExpr();
+                    log(3,"cur:" + curString );
+
+                    match(Token::SEMICOLON);
+                    log(3,"cur:" + curString );
+
+                    return true;
+                case 2:
+                    match(Token::NAME);
+                    log(3,"cur:" + curString );
+
+                    match(Token::EQUAL); 
+                    log(3,"cur:" + curString );
+
+                    match(Token::NUMBER);
+                    log(3,"cur:" + curString );
+
+                    match(Token::SEMICOLON);
+                    log(3,"cur:" + curString );
+
+                    return true;
+                default:
+                    return false;
             }
             return false;  
         }
@@ -401,7 +493,6 @@ namespace Perser{
         headTokens.clear();        
         return PerserRule::Statement();
     }
-
 }
 auto main()
  -> int{	
@@ -410,12 +501,14 @@ auto main()
 		std::cout<<">>> ";
 		std::getline(std::cin, line);
 		tokens = lexer(line);
+/*
         for(auto t : tokens){
-            std::cout << t.getVal() <<","<< t.getType() << "\n";
+            std::cout << t.getName() <<","<< t.getType() << "\n";
         }
+*/
         if(!Perser::perser()){
             std::cout<<"Syntax error! \n";
-            return 0;
+//            return 0;
         }
         tokens.clear();
 	}

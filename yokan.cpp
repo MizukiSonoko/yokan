@@ -300,6 +300,19 @@ namespace Perser{
             if(
                 match(Token::NAME) &&
                 match(Token::OPE_ADD) &&
+                PerserRule::BinaryExpr()
+            ){
+                success = 3;
+                release();
+                log(2,"speculate_BinaryExpr (1)- success");                
+                return success;
+            }
+            release();
+            mark();
+
+            if(
+                match(Token::NAME) &&
+                match(Token::OPE_ADD) &&
                 match(Token::NAME)
             ){
                 success = 1;
@@ -415,7 +428,7 @@ namespace Perser{
                     log(3,"cur:" + curString );
                     return true;
                 case 2:
-                    log(1,"BinaryExpr.1"); 
+                    log(1,"BinaryExpr.2"); 
 
                     match(Token::NAME);
                     log(3,"cur:" + curString );
@@ -424,6 +437,18 @@ namespace Perser{
                     log(3,"cur:" + curString );
 
                     match(Token::NUMBER);
+                    log(3,"cur:" + curString );
+                    return true;
+                case 3:
+                    log(1,"BinaryExpr.3"); 
+
+                    match(Token::NAME);
+                    log(3,"cur:" + curString );
+
+                    match(Token::OPE_ADD);
+                    log(3,"cur:" + curString );
+
+                    BinaryExpr();
                     log(3,"cur:" + curString );
                     return true;
                 default:

@@ -345,6 +345,7 @@ namespace Perser{
 
     namespace speculate{
 
+
         /* 
             BinaryExpr ->
                 Name, OPE_ADD, Name
@@ -470,6 +471,8 @@ namespace Perser{
     };
 
     namespace PerserRule{
+
+
         // そのまま値をここで返すべき？
         auto BinaryExpr()
          -> int{
@@ -518,16 +521,14 @@ namespace Perser{
                     (new TypeSet(Token::NAME))->
                         OR(Token::NUMBER)
                     );
-
-/*
+                /*
                     if(defVariable(curString)){
                         _l_val = variableTable[curString];
                     }else{
                         log(3,"Error undefined:["+curString+"] !!");
                         return -1;
                     }
-*/
-
+                */
                     return 1;                    
                 default:
                     return -1;
@@ -552,44 +553,28 @@ namespace Perser{
          -> bool{
             log(1,"VariableDecl");
 
-            std::string val_name;
-            int _value;
+            std::string _val_name;
 
-            switch(speculate::speculate_VariableDecl()){
-                case 1:
-                    match(Token::NAME);
-                    val_name = curString;
-
-                    match(Token::EQUAL); 
-
-                    _value = BinaryExpr();
-                    if(_value == -1){
-                        return false;
-                    }
-
-                    match(Token::FIN);
-                    std::cout<<"[Value]:"+std::to_string(_value)<<"\n";
-                    variableTable[val_name] = _value;
-                    return true;
-                case 2:
-
-                    match(Token::NAME);
-                    val_name = curString;
-
-                    match(Token::EQUAL); 
-
-                    match(Token::NUMBER);
-                    std::cout<<"[Value]~:"<<curString<<"\n";
-                    variableTable[val_name] = std::stoi(curString);
-                    std::cout<<"[Value]"<<val_name<<"="<<curString<<"\n";
-
-                    match(Token::FIN);
-
-                    return true;
-                default:
-                    return false;
+            int _specilate_result = speculate::speculate_VariableDecl();
+            if(!_specilate_result){
+                return false;
             }
-            return false;  
+
+            match(Token::NAME);
+            _val_name = curString;
+
+            match(Token::EQUAL); 
+
+            switch(_specilate_result){
+                case 1:
+                    BinaryExpr();
+                    break;
+                case 2:
+                    match(Token::NUMBER);
+                    break;
+            }
+            match(Token::FIN);
+            return true;  
         }
     };
 
@@ -610,11 +595,11 @@ auto main()
 		std::cout<<">>> ";
 		std::getline(std::cin, line);
 		tokens = lexer(line);
-
+/*
         for(auto t : tokens){
             std::cout << t.getName() <<","<< t.getType() << "\n";
         }
-
+*/
         if(!Perser::perser()){
             std::cout<<"Syntax error! \n";
 //            return 0;

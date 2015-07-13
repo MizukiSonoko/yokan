@@ -10,6 +10,7 @@
 class Token{
   public:
     enum Type{
+        MARGIN=-1,
         FIN,
         NAME,
         NUMBER,
@@ -176,20 +177,23 @@ auto lexer(std::string aLine)
         else
             tokens.push_back(Token(Token::NAME,buffer));
         buffer = "";
-    }else{
+    }else if(!buffer.empty()){
         std::cout<<"Error! invalid charator:"<< buffer <<std::endl;
     }
 
     tokens.push_back(Token(Token::FIN,"<FIN>"));
+    tokens.push_back(Token(Token::MARGIN,"<MARGIN>"));
 
 	return tokens;
 }
 
 void log(int layour, std::string msg){
+#ifdef DEBUG
     for(int i=0; i < layour; i++){
         std::cout<< " ";
     }
     std::cout<< msg <<"\n";
+#endif
 }
 
 namespace Perser{
@@ -268,8 +272,8 @@ namespace Perser{
         Token  token =  LT(1);     
      
         curString = token.getName();
-
         Token::Type t = token.getType();
+        log(1, "hope:"+std::to_string(type)+" real:"+std::to_string(t));
         if(type==t){
             nextToken();
             return true;
@@ -277,7 +281,6 @@ namespace Perser{
             return false;
         }
     }
-
 
     namespace PerserRule{
         bool BinaryExpr();
@@ -302,14 +305,14 @@ namespace Perser{
                 match(Token::OPE_ADD) &&
                 PerserRule::BinaryExpr()
             ){
-                success = 3;
+                success = 5;
                 release();
-                log(2,"speculate_BinaryExpr (1)- success");                
+                log(2,"speculate_BinaryExpr (5)- success");                
                 return success;
             }
             release();
-            mark();
 
+            mark();
             if(
                 match(Token::NAME) &&
                 match(Token::OPE_ADD) &&
@@ -321,18 +324,44 @@ namespace Perser{
                 return success;
             }
             release();
+
             mark();
             if(
                 match(Token::NAME) &&
                 match(Token::OPE_ADD) &&
-                match(Token::NUMBER)                
+                match(Token::NUMBER)
             ){
                 success = 2;
                 release();
-                log(2,"speculate_BinaryExpr (2)- success");
+                log(2,"speculate_BinaryExpr (2)- success");                
                 return success;
             }
+            release();            
 
+            mark();
+            if(
+                match(Token::NUMBER) &&
+                match(Token::OPE_ADD) &&
+                match(Token::NUMBER)
+            ){
+                success = 3;
+                release();
+                log(2,"speculate_BinaryExpr (3)- success");
+                return success;
+            }
+            release();
+
+            mark();
+            if(
+                match(Token::NUMBER) &&
+                match(Token::OPE_ADD) &&
+                match(Token::NAME)
+            ){
+                success = 4;
+                release();
+                log(2,"speculate_BinaryExpr (4)- success");
+                return success;
+            }
             release();
             log(2,"speculate_BinaryExpr - failed");            
             return success;
@@ -368,15 +397,14 @@ namespace Perser{
          -> int{
             log(1,"speculate_VariableDecl");
             int success = 0;
+
             mark();
-
-
             if(
             /* Write rule */
             match(Token::NAME) &&
             match(Token::EQUAL) && 
             PerserRule::BinaryExpr() &&
-            match(Token::SEMICOLON)
+            match(Token::FIN)
             /* ---------- */
             ){
                 success = 1;
@@ -384,16 +412,13 @@ namespace Perser{
                 log(2,"speculate_VariableDecl (1)- success");
                 return success;
             }
-
             release();
-            mark();
 
+            mark();
             if(
             /* Write rule */
-            match(Token::NAME) &&
-            match(Token::EQUAL) && 
             match(Token::NUMBER) &&
-            match(Token::SEMICOLON)
+            match(Token::FIN)
             /* ---------- */
             ){
                 success = 1;
@@ -401,7 +426,6 @@ namespace Perser{
                 log(2,"speculate_VariableDecl (2)- success");
                 return success;
             }
-
             release();
             log(2,"speculate_VariableDecl - failed");
             return success;
@@ -416,31 +440,36 @@ namespace Perser{
 
             switch(speculate::speculate_BinaryExpr()){
                 case 1:
-
                     log(1,"BinaryExpr.1"); 
                     match(Token::NAME);
-                    log(3,"cur:" + curString );
-        
                     match(Token::OPE_ADD);
-                    log(3,"cur:" + curString );
-        
                     match(Token::NAME);
                     log(3,"cur:" + curString );
                     return true;
                 case 2:
                     log(1,"BinaryExpr.2"); 
-
                     match(Token::NAME);
-                    log(3,"cur:" + curString );
-
                     match(Token::OPE_ADD);
-                    log(3,"cur:" + curString );
-
                     match(Token::NUMBER);
                     log(3,"cur:" + curString );
                     return true;
                 case 3:
                     log(1,"BinaryExpr.3"); 
+                    match(Token::NUMBER);
+                    match(Token::OPE_ADD);
+                    match(Token::NUMBER);
+                    log(3,"cur:" + curString );
+                    return true;
+                case 4:
+                    log(1,"BinaryExpr.4"); 
+                    match(Token::NUMBER);
+                    match(Token::OPE_ADD);
+                    match(Token::NAME);
+                    log(3,"cur:" + curString );
+                    return true;
+
+                case 5:
+                    log(1,"BinaryExpr.5"); 
 
                     match(Token::NAME);
                     log(3,"cur:" + curString );
@@ -484,7 +513,7 @@ namespace Perser{
                     BinaryExpr();
                     log(3,"cur:" + curString );
 
-                    match(Token::SEMICOLON);
+                    match(Token::FIN);
                     log(3,"cur:" + curString );
 
                     return true;
@@ -498,7 +527,7 @@ namespace Perser{
                     match(Token::NUMBER);
                     log(3,"cur:" + curString );
 
-                    match(Token::SEMICOLON);
+                    match(Token::FIN);
                     log(3,"cur:" + curString );
 
                     return true;
@@ -526,11 +555,11 @@ auto main()
 		std::cout<<">>> ";
 		std::getline(std::cin, line);
 		tokens = lexer(line);
-/*
+
         for(auto t : tokens){
             std::cout << t.getName() <<","<< t.getType() << "\n";
         }
-*/
+
         if(!Perser::perser()){
             std::cout<<"Syntax error! \n";
 //            return 0;

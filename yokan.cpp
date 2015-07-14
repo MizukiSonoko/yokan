@@ -368,24 +368,28 @@ namespace Perser{
 
     namespace PerserRule{
         int ConditionExpr();
-        bool IfStatement();
+        int IfStatement();
         int  BinaryExpr();
-        bool VariableDecl();
+        int VariableDecl();
         int Statement();
-        bool FIN();
+        int FIN();
     };
 
     namespace Rule{
-        auto FIN = []{
-            return match(Token::FIN);            
+        std::array< std::function<bool()>, 1> FIN{
+            []{
+                return match(Token::FIN);            
+            }
         };
 
-        auto IfStatement = []{
-            return 
-                match(Token::NAME,"if") &&
-                PerserRule::ConditionExpr() &&
-                match(Token::COLON) &&
-                match(Token::FIN);
+        std::array< std::function<bool()>, 1> IfStatement{
+            []{
+                return 
+                    match(Token::NAME,"if") &&
+                    PerserRule::ConditionExpr() &&
+                    match(Token::COLON) &&
+                    match(Token::FIN);
+            }
         };
 
         std::array< std::function<bool()>, 2> CoditionExpr{
@@ -417,8 +421,68 @@ namespace Perser{
             }
         };
 
-    }
+        std::array< std::function<bool()>, 2> BinaryExpr{
+            []{
+                return 
+                    match(
+                    (new TypeSet(Token::NAME))->
+                        OR(Token::NUMBER)
+                    ) &&
+                    match(
+                        (new TypeSet(Token::OPE_ADD))->
+                            OR(Token::OPE_SUB)->
+                            OR(Token::OPE_DIV)->
+                            OR(Token::OPE_MUL)
+                    ) &&
+                    PerserRule::BinaryExpr();
+            },
+            []{
+                return 
+                    match(
+                        (new TypeSet(Token::NAME))->
+                            OR(Token::NUMBER)
+                    ) &&
+                    match(
+                        (new TypeSet(Token::OPE_ADD))->
+                            OR(Token::OPE_SUB)->
+                            OR(Token::OPE_DIV)->
+                            OR(Token::OPE_MUL)
+                    ) &&
+                    match(
+                        (new TypeSet(Token::NAME))->
+                            OR(Token::NUMBER)
+                    );
+            }
+        };
+        std::array< std::function<bool()>, 3> Statement{
+            []{
+                return PerserRule::VariableDecl();
+            },
+            []{
+                return PerserRule::IfStatement();
+            },
+            []{
+                return PerserRule::FIN();
+            }
+        };
 
+        std::array< std::function<bool()>, 2> VariableDecl{
+            []{
+                return 
+                    match(Token::NAME) &&
+                    match(Token::EQUAL) && 
+                    PerserRule::BinaryExpr() &&
+                    match(Token::FIN);
+            },
+            []{
+                return
+                    match(Token::NAME) &&
+                    match(Token::EQUAL) &&
+                    match(Token::NUMBER) &&
+                    match(Token::FIN);                
+            }
+        };
+    }
 
     namespace speculate{
 
@@ -448,162 +512,19 @@ namespace Perser{
             return 0;
         }
 
-        /* 
-            BinaryExpr ->
-                Name, OPE_ADD, Name
-        */
-        auto speculate_BinaryExpr()
-         -> int{
-            log(1,"speculate_BinaryExpr");
-
-            int success = 0;
-            mark();
-            if(
-                match(
-                    (new TypeSet(Token::NAME))->
-                        OR(Token::NUMBER)
-                ) &&
-                match(
-                    (new TypeSet(Token::OPE_ADD))->
-                        OR(Token::OPE_SUB)->
-                        OR(Token::OPE_DIV)->
-                        OR(Token::OPE_MUL)
-                ) &&
-                PerserRule::BinaryExpr() != -1
-            ){
-                success = 1;
-                release();
-                log(2,"speculate_BinaryExpr (1)- success");                
-                return success;
-            }
-            release();
-
-            mark();
-            if(
-                match(
-                    (new TypeSet(Token::NAME))->
-                        OR(Token::NUMBER)
-                ) &&
-                match(
-                    (new TypeSet(Token::OPE_ADD))->
-                        OR(Token::OPE_SUB)->
-                        OR(Token::OPE_DIV)->
-                        OR(Token::OPE_MUL)
-                ) &&
-                match(
-                    (new TypeSet(Token::NAME))->
-                        OR(Token::NUMBER)
-                )
-            ){
-                success = 2;
-                release();
-                log(2,"speculate_BinaryExpr (2)- success");                
-                return success;
-            }
-            release();
-            log(2,"speculate_BinaryExpr - failed");            
-            return success;
-        }
-
-        /* 
-            Statement ->
-                VariableDecl,
-        */
-        auto speculate_Statement()
-         -> int{
-            log(1,"speculate_Statement");
-            int success = 0;
-            mark();
-            if(
-                PerserRule::VariableDecl()
-            ){
-                success = 1;
-                release();
-                log(2,"speculate_Statement -(1) success");
-                return success;
-            }
-            release();
-
-            mark();
-            if(
-                PerserRule::IfStatement()
-            ){
-                success = 2;
-                release();
-                log(2,"speculate_Statement -(2) success");
-                return success;
-            }
-            release();
-
-            mark();
-            if(
-                PerserRule::FIN()
-            ){
-                success = 3;
-                release();
-                log(2,"speculate_Statement -(3) success");
-                return success;
-            }
-            release();
-
-            log(2,"speculate_Statement - failed");
-            return success;
-        }
-
-        /* 
-            VariableDecl ->
-                NAME, EQUAL, NUMBER
-        */
-        auto speculate_VariableDecl()
-         -> int{
-            log(1,"speculate_VariableDecl");
-            int success = 0;
-
-            mark();
-            if(
-            /* Write rule */
-            match(Token::NAME) &&
-            match(Token::EQUAL) && 
-            PerserRule::BinaryExpr() &&
-            match(Token::FIN)
-            /* ---------- */
-            ){
-                success = 1;
-                release();
-                log(2,"speculate_VariableDecl (1)- success");
-                return success;
-            }
-            release();
-            log(3, "second!!!!!!!!");
-            mark();
-            if(
-            /* Write rule */
-            match(Token::NAME) &&
-            match(Token::EQUAL) &&
-            match(Token::NUMBER) &&
-            match(Token::FIN)
-            /* ---------- */
-            ){
-                success = 2;
-                release();
-                log(2,"speculate_VariableDecl (2)- success");
-                return success;
-            }
-            release();
-            log(2,"speculate_VariableDecl - failed");
-            return success;
-         }
     };
 
     namespace PerserRule{
 
         auto FIN()
-         -> bool{
-            if(speculate::speculate(Rule::FIN)){
-                Rule::FIN();
-                return true;
+         -> int{
+            log(0,"ConditionExpr");
+            int _result = speculate::speculate(Rule::FIN);
+            if(!_result){
+                return 0;
             }
-            return false;
+            Rule::FIN[ _result-1 ]();
+            return _result;
         }
 
         auto ConditionExpr()
@@ -615,127 +536,50 @@ namespace Perser{
                 }
                 Rule::CoditionExpr[ _result-1 ]();
                 return _result;
-         }
-
-        auto IfStatement()
-         -> bool{
-            if(speculate::speculate(Rule::IfStatement)){
-                Rule::IfStatement();
-                return true;
-            }
-            return false;
         }
 
-        // そのまま値をここで返すべき？
+        auto IfStatement()
+         -> int{
+            log(0,"ConditionExpr");
+            int _result = speculate::speculate(Rule::IfStatement);
+            if(!_result){
+                return 0;
+            }
+            Rule::IfStatement[ _result-1 ]();
+            return _result;
+        }
+
         auto BinaryExpr()
          -> int{
             log(0,"BinaryExpr");  
-            int _r_val, _l_val;  
-
-            switch(speculate::speculate_BinaryExpr()){
-                case 1:
-                    log(1,"BinaryExpr.1"); 
-
-                    match(
-                    (new TypeSet(Token::NAME))->
-                        OR(Token::NUMBER)
-                    );
-
-                    match(
-                        (new TypeSet(Token::OPE_ADD))->
-                            OR(Token::OPE_SUB)->
-                            OR(Token::OPE_DIV)->
-                            OR(Token::OPE_MUL)
-                    );
-
-                    _r_val = BinaryExpr();
-                    if(_r_val != -1){
-                        return 1;
-                    }else{
-                        log(3,"Error undefined:["+curString+"] !!");
-                        return -1;
-                    }
-
-                case 2:
-                    log(1,"BinaryExpr.1"); 
-                    match(
-                    (new TypeSet(Token::NAME))->
-                        OR(Token::NUMBER)
-                    );
-
-                    match(
-                        (new TypeSet(Token::OPE_ADD))->
-                            OR(Token::OPE_SUB)->
-                            OR(Token::OPE_DIV)->
-                            OR(Token::OPE_MUL)
-                    );
-
-                    match(
-                    (new TypeSet(Token::NAME))->
-                        OR(Token::NUMBER)
-                    );
-                /*
-                    if(defVariable(curString)){
-                        _l_val = variableTable[curString];
-                    }else{
-                        log(3,"Error undefined:["+curString+"] !!");
-                        return -1;
-                    }
-                */
-                    return 1;                    
-                default:
-                    return -1;
+            int _result = speculate::speculate(Rule::BinaryExpr);
+            if(!_result){
+                return 0;
             }
-            return -1;
+            Rule::BinaryExpr[ _result-1 ]();
+            return _result;
         }
 
         auto Statement()
          -> int{
-            log(0,"Statement");            
-            switch(speculate::speculate_Statement()){
-                case 1:
-                    log(1,"Statement.VariableDecl"); 
-                    VariableDecl();
-                    return 1;
-                case 2:
-                    log(1,"Statement.IfStatement"); 
-                    IfStatement();
-                    return 2;            
-                case 3:
-                    log(1,"Statement.FIN"); 
-                    FIN();
-                    return 1;                    
-                default:
-                    return false;
+            log(0,"Statement");         
+            int _result = speculate::speculate(Rule::Statement);
+            if(!_result){
+                return 0;
             }
+            Rule::Statement[ _result-1 ]();
+            return _result;
         }
 
         auto VariableDecl()
-         -> bool{
+         -> int{
             log(1,"VariableDecl");
-
-            std::string _val_name;
-
-            int _specilate_result = speculate::speculate_VariableDecl();
-            if(!_specilate_result){
-                return false;
+            int _result = speculate::speculate(Rule::VariableDecl);
+            if(!_result){
+                return 0;
             }
-
-            match(Token::NAME);
-            _val_name = curString;
-
-            match(Token::EQUAL); 
-
-            switch(_specilate_result){
-                case 1:
-                    BinaryExpr();
-                    break;
-                case 2:
-                    match(Token::NUMBER);
-                    break;
-            }
-            match(Token::FIN);
-            return true;  
+            Rule::VariableDecl[ _result-1 ]();
+            return _result;
         }
     };
 
@@ -749,6 +593,7 @@ namespace Perser{
         return PerserRule::Statement();
     }
 }
+
 auto main()
  -> int{	
 	std::string line;

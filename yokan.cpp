@@ -609,19 +609,12 @@ namespace Perser{
         auto ConditionExpr()
          -> int{
                 log(0,"ConditionExpr");
-                int _specilate_result = speculate::speculate(Rule::CoditionExpr);
-                if(!_specilate_result){
-                    return false;
+                int _result = speculate::speculate(Rule::CoditionExpr);
+                if(!_result){
+                    return 0;
                 }
-                switch(_specilate_result){
-                    case 1:
-                        Rule::CoditionExpr[0]();
-                        return 1;
-                    case 2:
-                        Rule::CoditionExpr[1]();
-                        return 2;
-                }
-                return true;
+                Rule::CoditionExpr[ _result-1 ]();
+                return _result;
          }
 
         auto IfStatement()

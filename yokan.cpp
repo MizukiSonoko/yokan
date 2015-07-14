@@ -5,7 +5,9 @@
 #include <stack>
 #include <map>
 #include <functional>
-
+#include <initializer_list>
+#include <array> 
+ 
 #include <cstdarg>
 #include <memory>
 
@@ -364,12 +366,6 @@ namespace Perser{
         return true;
     }
 
-    namespace Rule{
-        auto FIN = []{
-            return match(Token::FIN);            
-        };
-    }
-
     namespace PerserRule{
         int ConditionExpr();
         bool IfStatement();
@@ -378,6 +374,51 @@ namespace Perser{
         int Statement();
         bool FIN();
     };
+
+    namespace Rule{
+        auto FIN = []{
+            return match(Token::FIN);            
+        };
+
+        auto IfStatement = []{
+            return 
+                match(Token::NAME,"if") &&
+                PerserRule::ConditionExpr() &&
+                match(Token::COLON) &&
+                match(Token::FIN);
+        };
+
+        std::array< std::function<bool()>, 2> CoditionExpr{
+            []{
+                return 
+                    match(
+                        (new TypeSet(Token::NAME))->
+                                  OR(Token::NUMBER)
+                    ) &&
+                    match(Token::EQUAL) &&
+                    match(Token::EQUAL) &&
+                    match(
+                        (new TypeSet(Token::NAME))->
+                                  OR(Token::NUMBER)
+                    );
+            },
+            []{
+                return 
+                    match(
+                        (new TypeSet(Token::NAME))->
+                                  OR(Token::NUMBER)
+                    ) &&
+                    match(Token::EXCLAMATION) &&
+                    match(Token::EQUAL) &&
+                    match(
+                        (new TypeSet(Token::NAME))->
+                                  OR(Token::NUMBER)
+                    );
+            }
+        };
+
+    }
+
 
     namespace speculate{
 
@@ -394,76 +435,17 @@ namespace Perser{
             return success;
         }
 
-        auto speculate_FIN()
-         -> bool{
-            mark();
-            bool success = false;
-            if(
-                Rule::FIN()
-            ){
-                success = true;
-            }
-            release();
-            return success;
-        }
-
-        auto speculate_CoditionExpr()
+        template<std::size_t size>
+        auto speculate(std::array< std::function<bool()>,size> rules)
          -> int{
-            mark();
-            if(
-                match(
-                    (new TypeSet(Token::NAME))->
-                        OR(Token::NUMBER)
-                ) &&
-                match(Token::EQUAL) &&
-                match(Token::EQUAL) &&
-                match(
-                    (new TypeSet(Token::NAME))->
-                        OR(Token::NUMBER)
-                )
-            ){
-                release();
-                log(2,"speculate_CoditionExpr (1) success"); 
-                return 1; 
+            int case_num = 1;
+            for(auto rule : rules){
+                if(speculate(rule)){
+                    return case_num;
+                }
+                case_num ++;
             }
-            release();
-
-            mark();
-            if(
-                match(
-                    (new TypeSet(Token::NAME))->
-                        OR(Token::NUMBER)
-                ) &&
-                match(Token::EXCLAMATION) &&
-                match(Token::EQUAL) &&
-                match(
-                    (new TypeSet(Token::NAME))->
-                        OR(Token::NUMBER)
-                )
-            ){
-                release();
-                log(2,"speculate_CoditionExpr (2) success"); 
-                return 2; 
-            }
-
             return 0;
-        }
-
-        auto speculate_IfStatement()
-         -> bool{
-            mark();
-            if(
-                match(Token::NAME,"if") &&
-                PerserRule::ConditionExpr() &&
-                match(Token::COLON) &&
-                match(Token::FIN)
-            ){
-                release();
-                log(2,"speculate_IfStatement success");                
-                return true;
-            }
-            log(2,"speculate_IfStatement failed");
-            return false;
         }
 
         /* 
@@ -615,7 +597,6 @@ namespace Perser{
 
     namespace PerserRule{
 
-
         auto FIN()
          -> bool{
             if(speculate::speculate(Rule::FIN)){
@@ -628,36 +609,16 @@ namespace Perser{
         auto ConditionExpr()
          -> int{
                 log(0,"ConditionExpr");
-                int _specilate_result = speculate::speculate_CoditionExpr();
+                int _specilate_result = speculate::speculate(Rule::CoditionExpr);
                 if(!_specilate_result){
                     return false;
                 }
                 switch(_specilate_result){
                     case 1:
-                        match(
-                            (new TypeSet(Token::NAME))->
-                                OR(Token::NUMBER)
-                        );
-                        match(Token::EQUAL);
-                        match(Token::EQUAL); 
-                        match(
-                            (new TypeSet(Token::NAME))->
-                                OR(Token::NUMBER)
-                        );
-                        match(Token::FIN);
+                        Rule::CoditionExpr[0]();
                         return 1;
                     case 2:
-                        match(
-                            (new TypeSet(Token::NAME))->
-                                OR(Token::NUMBER)
-                        );
-                        match(Token::EXCLAMATION);
-                        match(Token::EQUAL);
-                        match(
-                            (new TypeSet(Token::NAME))->
-                                OR(Token::NUMBER)
-                        );
-                        match(Token::FIN);
+                        Rule::CoditionExpr[1]();
                         return 2;
                 }
                 return true;
@@ -665,11 +626,8 @@ namespace Perser{
 
         auto IfStatement()
          -> bool{
-            if(speculate::speculate_IfStatement()){
-                match(Token::NAME,"if");
-                ConditionExpr();
-                match(Token::COLON);
-                match(Token::FIN);
+            if(speculate::speculate(Rule::IfStatement)){
+                Rule::IfStatement();
                 return true;
             }
             return false;

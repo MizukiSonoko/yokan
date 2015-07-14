@@ -369,9 +369,24 @@ namespace Perser{
         int  BinaryExpr();
         bool VariableDecl();
         int Statement();
+        bool FIN();
     };
 
     namespace speculate{
+
+        auto speculate_FIN()
+         -> bool{
+            mark();
+            bool success = false;
+            if(
+                match(Token::FIN)
+            ){
+                success = true;
+            }
+            release();
+            return success;
+        }
+
         auto speculate_CoditionExpr()
          -> int{
             mark();
@@ -516,6 +531,18 @@ namespace Perser{
                 log(2,"speculate_Statement -(2) success");
                 return success;
             }
+            release();
+
+            mark();
+            if(
+                PerserRule::FIN()
+            ){
+                success = 3;
+                release();
+                log(2,"speculate_Statement -(3) success");
+                return success;
+            }
+            release();
 
             log(2,"speculate_Statement - failed");
             return success;
@@ -567,6 +594,15 @@ namespace Perser{
     };
 
     namespace PerserRule{
+
+        auto FIN()
+         -> bool{
+            if(speculate::speculate_FIN()){
+                match(Token::FIN);
+                return true;
+            }
+            return false;
+        }
 
         auto ConditionExpr()
          -> int{
@@ -688,13 +724,15 @@ namespace Perser{
                 case 1:
                     log(1,"Statement.VariableDecl"); 
                     VariableDecl();
-                    log(1,"Statement.VariableDecl FIN"); 
                     return 1;
                 case 2:
                     log(1,"Statement.IfStatement"); 
                     IfStatement();
-                    log(1,"Statement.IfStatement FIN"); 
-                    return 2;                    
+                    return 2;            
+                case 3:
+                    log(1,"Statement.FIN"); 
+                    FIN();
+                    return 1;                    
                 default:
                     return false;
             }
@@ -755,9 +793,7 @@ auto main()
         int result = Perser::perser();
         if(!result){
             std::cout<<"Syntax error! \n";
-//            return 0;
         }
-        std::cout<<"   res:"<<result<<"\n";
         if(result==2){
             term = "... ";
         }else{

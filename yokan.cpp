@@ -369,7 +369,7 @@ namespace Perser{
     namespace PerserRule{
         int ConditionExpr();
         int IfStatement();
-        int  BinaryExpr();
+        int BinaryExpr();
         int VariableDecl();
         int Statement();
         int FIN();
@@ -454,6 +454,7 @@ namespace Perser{
                     );
             }
         };
+
         std::array< std::function<bool()>, 3> Statement{
             []{
                 return PerserRule::VariableDecl();
@@ -516,70 +517,51 @@ namespace Perser{
 
     namespace PerserRule{
 
-        auto FIN()
+        template<std::size_t size>
+        auto Perser(std::array< std::function<bool()>,size> rules)
          -> int{
-            log(0,"ConditionExpr");
-            int _result = speculate::speculate(Rule::FIN);
+            int _result = speculate::speculate(rules);
             if(!_result){
                 return 0;
             }
-            Rule::FIN[ _result-1 ]();
+            rules[ _result-1 ]();
             return _result;
+        }
+
+        auto FIN()
+         -> int{
+            log(0,"ConditionExpr");
+            return Perser(Rule::FIN);
         }
 
         auto ConditionExpr()
          -> int{
                 log(0,"ConditionExpr");
-                int _result = speculate::speculate(Rule::CoditionExpr);
-                if(!_result){
-                    return 0;
-                }
-                Rule::CoditionExpr[ _result-1 ]();
-                return _result;
+                return Perser(Rule::ConditionExpr);
         }
 
         auto IfStatement()
          -> int{
             log(0,"ConditionExpr");
-            int _result = speculate::speculate(Rule::IfStatement);
-            if(!_result){
-                return 0;
-            }
-            Rule::IfStatement[ _result-1 ]();
-            return _result;
+            return Perser(Rule::IfStatement);
         }
 
         auto BinaryExpr()
          -> int{
             log(0,"BinaryExpr");  
-            int _result = speculate::speculate(Rule::BinaryExpr);
-            if(!_result){
-                return 0;
-            }
-            Rule::BinaryExpr[ _result-1 ]();
-            return _result;
+            return Perser(Rule::BinaryExpr);
         }
 
         auto Statement()
          -> int{
-            log(0,"Statement");         
-            int _result = speculate::speculate(Rule::Statement);
-            if(!_result){
-                return 0;
-            }
-            Rule::Statement[ _result-1 ]();
-            return _result;
+            log(0,"Statement");  
+            return Perser(Rule::Statement);
         }
 
         auto VariableDecl()
          -> int{
             log(1,"VariableDecl");
-            int _result = speculate::speculate(Rule::VariableDecl);
-            if(!_result){
-                return 0;
-            }
-            Rule::VariableDecl[ _result-1 ]();
-            return _result;
+            return Perser(Rule::VariableDecl);
         }
     };
 

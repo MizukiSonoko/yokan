@@ -4,6 +4,7 @@
 #include <vector>
 #include <stack>
 #include <map>
+#include <functional>
 
 #include <cstdarg>
 #include <memory>
@@ -363,6 +364,12 @@ namespace Perser{
         return true;
     }
 
+    namespace Rule{
+        auto FIN = []{
+            return match(Token::FIN);            
+        };
+    }
+
     namespace PerserRule{
         int ConditionExpr();
         bool IfStatement();
@@ -374,12 +381,25 @@ namespace Perser{
 
     namespace speculate{
 
+        auto speculate(std::function<bool()> rule)
+         -> bool{
+            mark();
+            bool success = false;
+            if(
+                rule()
+            ){
+                success = true;
+            }
+            release();
+            return success;
+        }
+
         auto speculate_FIN()
          -> bool{
             mark();
             bool success = false;
             if(
-                match(Token::FIN)
+                Rule::FIN()
             ){
                 success = true;
             }
@@ -595,10 +615,11 @@ namespace Perser{
 
     namespace PerserRule{
 
+
         auto FIN()
          -> bool{
-            if(speculate::speculate_FIN()){
-                match(Token::FIN);
+            if(speculate::speculate(Rule::FIN)){
+                Rule::FIN();
                 return true;
             }
             return false;

@@ -19,10 +19,13 @@ class Token{
         NAME,
         NUMBER,
         IDENTIFIER,
+        EXCLAMATION,
         LPARENT,
         RPARENT,
         RBRACKET,
         LBRACKET,
+        RABRACKET,
+        LABRACKET,
         SEMICOLON,
         COLON,
         DQUOTATION,
@@ -70,7 +73,6 @@ class TypeSet{
         }
         return Token::ERROR;
     }
-
 };
 
 std::map<std::string, int> values;
@@ -99,7 +101,6 @@ auto isSpecial(char c)
 	}
 	return false;
 }
-
 auto lexer(std::string aLine)
  -> std::list<Token>{
 	std::list<Token> tokens;
@@ -166,6 +167,12 @@ auto lexer(std::string aLine)
             case '[':
                 tokens.push_back(Token(Token::LBRACKET,"["));
                 break;
+            case '>':
+                tokens.push_back(Token(Token::RABRACKET,">"));
+                break;
+            case '<':
+                tokens.push_back(Token(Token::LABRACKET,"<"));
+                break;
             case ';':
                 tokens.push_back(Token(Token::SEMICOLON,";"));
                 break;
@@ -186,6 +193,9 @@ auto lexer(std::string aLine)
                 break;
             case '/':
                 tokens.push_back(Token(Token::OPE_DIV,"/"));
+                break;
+            case '!':
+                tokens.push_back(Token(Token::EXCLAMATION,"!"));
                 break;
             default:
                 if(!buffer.empty()){
@@ -313,6 +323,22 @@ namespace Perser{
         }
     }
 
+    auto match(Token::Type type, std::string reserved)
+     -> bool{
+        Token  token =  LT(1);     
+     
+        curString = token.getName();
+
+        Token::Type t = token.getType();
+        log(1, "hope:"+std::to_string(type)+" real:"+std::to_string(t));
+        if(type == t and curString == reserved){
+            nextToken();
+            return true;
+        }else{
+            return false;
+        }
+    } 
+
     auto match(TypeSet* typeSet)
      -> bool{
         Token  token =  LT(1);     
@@ -338,13 +364,72 @@ namespace Perser{
     }
 
     namespace PerserRule{
-        int BinaryExpr();
+        int ConditionExpr();
+        bool IfStatement();
+        int  BinaryExpr();
         bool VariableDecl();
-        bool Statement();
+        int Statement();
     };
 
     namespace speculate{
+        auto speculate_CoditionExpr()
+         -> int{
+            mark();
+            if(
+                match(
+                    (new TypeSet(Token::NAME))->
+                        OR(Token::NUMBER)
+                ) &&
+                match(Token::EQUAL) &&
+                match(Token::EQUAL) &&
+                match(
+                    (new TypeSet(Token::NAME))->
+                        OR(Token::NUMBER)
+                )
+            ){
+                release();
+                log(2,"speculate_CoditionExpr (1) success"); 
+                return 1; 
+            }
+            release();
 
+            mark();
+            if(
+                match(
+                    (new TypeSet(Token::NAME))->
+                        OR(Token::NUMBER)
+                ) &&
+                match(Token::EXCLAMATION) &&
+                match(Token::EQUAL) &&
+                match(
+                    (new TypeSet(Token::NAME))->
+                        OR(Token::NUMBER)
+                )
+            ){
+                release();
+                log(2,"speculate_CoditionExpr (2) success"); 
+                return 2; 
+            }
+
+            return 0;
+        }
+
+        auto speculate_IfStatement()
+         -> bool{
+            mark();
+            if(
+                match(Token::NAME,"if") &&
+                PerserRule::ConditionExpr() &&
+                match(Token::COLON) &&
+                match(Token::FIN)
+            ){
+                release();
+                log(2,"speculate_IfStatement success");                
+                return true;
+            }
+            log(2,"speculate_IfStatement failed");
+            return false;
+        }
 
         /* 
             BinaryExpr ->
@@ -417,10 +502,21 @@ namespace Perser{
             ){
                 success = 1;
                 release();
-                log(2,"speculate_Statement - success");
+                log(2,"speculate_Statement -(1) success");
                 return success;
             }
             release();
+
+            mark();
+            if(
+                PerserRule::IfStatement()
+            ){
+                success = 2;
+                release();
+                log(2,"speculate_Statement -(2) success");
+                return success;
+            }
+
             log(2,"speculate_Statement - failed");
             return success;
         }
@@ -472,6 +568,55 @@ namespace Perser{
 
     namespace PerserRule{
 
+        auto ConditionExpr()
+         -> int{
+                log(0,"ConditionExpr");
+                int _specilate_result = speculate::speculate_CoditionExpr();
+                if(!_specilate_result){
+                    return false;
+                }
+                switch(_specilate_result){
+                    case 1:
+                        match(
+                            (new TypeSet(Token::NAME))->
+                                OR(Token::NUMBER)
+                        );
+                        match(Token::EQUAL);
+                        match(Token::EQUAL); 
+                        match(
+                            (new TypeSet(Token::NAME))->
+                                OR(Token::NUMBER)
+                        );
+                        match(Token::FIN);
+                        return 1;
+                    case 2:
+                        match(
+                            (new TypeSet(Token::NAME))->
+                                OR(Token::NUMBER)
+                        );
+                        match(Token::EXCLAMATION);
+                        match(Token::EQUAL);
+                        match(
+                            (new TypeSet(Token::NAME))->
+                                OR(Token::NUMBER)
+                        );
+                        match(Token::FIN);
+                        return 2;
+                }
+                return true;
+         }
+
+        auto IfStatement()
+         -> bool{
+            if(speculate::speculate_IfStatement()){
+                match(Token::NAME,"if");
+                ConditionExpr();
+                match(Token::COLON);
+                match(Token::FIN);
+                return true;
+            }
+            return false;
+        }
 
         // そのまま値をここで返すべき？
         auto BinaryExpr()
@@ -537,13 +682,19 @@ namespace Perser{
         }
 
         auto Statement()
-         -> bool{
+         -> int{
             log(0,"Statement");            
             switch(speculate::speculate_Statement()){
                 case 1:
                     log(1,"Statement.VariableDecl"); 
                     VariableDecl();
-                    return true;
+                    log(1,"Statement.VariableDecl FIN"); 
+                    return 1;
+                case 2:
+                    log(1,"Statement.IfStatement"); 
+                    IfStatement();
+                    log(1,"Statement.IfStatement FIN"); 
+                    return 2;                    
                 default:
                     return false;
             }
@@ -579,7 +730,7 @@ namespace Perser{
     };
 
     auto perser()
-     -> bool{
+     -> int{
         buf_index = 0;
         while(markers.size()!=0){
             markers.pop();
@@ -591,8 +742,9 @@ namespace Perser{
 auto main()
  -> int{	
 	std::string line;
+    std::string term = ">>> ";
 	while(true){
-		std::cout<<">>> ";
+		std::cout<<term;
 		std::getline(std::cin, line);
 		tokens = lexer(line);
 /*
@@ -600,9 +752,16 @@ auto main()
             std::cout << t.getName() <<","<< t.getType() << "\n";
         }
 */
-        if(!Perser::perser()){
+        int result = Perser::perser();
+        if(!result){
             std::cout<<"Syntax error! \n";
 //            return 0;
+        }
+        std::cout<<"   res:"<<result<<"\n";
+        if(result==2){
+            term = "... ";
+        }else{
+            term = ">>> ";
         }
         tokens.clear();
 	}

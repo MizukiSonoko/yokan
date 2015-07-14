@@ -31,6 +31,7 @@ class Token{
         LABRACKET,
         SEMICOLON,
         COLON,
+        COMMA,
         DQUOTATION,
         EQUAL,
         OPE_ADD, 
@@ -96,7 +97,7 @@ auto isNumber(char c)
 }
 auto isSpecial(char c)
  -> bool{
- 	char list[] = "(){}[];:=+";
+ 	char list[] = "\",.<>(){}[];:=+";
  	for(auto v : list){
  		if(v==c){
 			return true;
@@ -181,6 +182,9 @@ auto lexer(std::string aLine)
                 break;
             case ':':
                 tokens.push_back(Token(Token::COLON,":"));
+                break;
+            case ',':
+                tokens.push_back(Token(Token::COMMA,","));
                 break;
             case '=':
                 tokens.push_back(Token(Token::EQUAL,"="));
@@ -314,7 +318,6 @@ namespace Perser{
         Token  token =  LT(1);     
      
         curString = token.getName();
-        log(3,"cur:" + curString );
 
         Token::Type t = token.getType();
         log(1, "hope:"+std::to_string(type)+" real:"+std::to_string(t));
@@ -347,7 +350,6 @@ namespace Perser{
         Token  token =  LT(1);     
      
         curString = token.getName();
-        log(3,"cur:" + curString );
 
         for(int i = 0; i < typeSet->size(); i++){
             Token::Type t = typeSet->at(i);
@@ -367,6 +369,8 @@ namespace Perser{
     }
 
     namespace PerserRule{
+        int FunctionVariableDecl();
+        int FunctionDecl();
         int ConditionExpr();
         int IfStatement();
         int BinaryExpr();
@@ -382,17 +386,54 @@ namespace Perser{
             }
         };
 
+        std::array< std::function<bool()>, 2> FunctionVariableDecl{
+            []{
+                return
+                    match(Token::NAME) &&
+                    match(Token::COMMA) &&
+                    PerserRule::FunctionVariableDecl();
+            },
+            []{
+                return
+                    match(Token::NAME);
+            }
+        };
+
+        std::array< std::function<bool()>, 2> FunctionDecl{
+            []{
+                return 
+                    match(Token::NAME,"def") &&
+                    match(Token::NAME) &&
+                    match(Token::LPARENT) &&
+                    PerserRule::FunctionVariableDecl() &&
+                    match(Token::RPARENT) &&
+                    match(Token::COLON) &&
+                    match(Token::FIN)
+                    ? 2 : 0;
+            },
+            []{
+                return 
+                    match(Token::NAME,"def") &&
+                    match(Token::NAME) &&
+                    match(Token::LPARENT) &&
+                    match(Token::RPARENT) &&
+                    match(Token::COLON) &&
+                    match(Token::FIN) 
+                    ? 2 : 0;
+            }            
+        };
+
         std::array< std::function<bool()>, 1> IfStatement{
             []{
                 return 
                     match(Token::NAME,"if") &&
                     PerserRule::ConditionExpr() &&
                     match(Token::COLON) &&
-                    match(Token::FIN);
+                    match(Token::FIN) ? 2 : 0;
             }
         };
 
-        std::array< std::function<bool()>, 2> CoditionExpr{
+        std::array< std::function<bool()>, 2> ConditionExpr{
             []{
                 return 
                     match(
@@ -455,7 +496,7 @@ namespace Perser{
             }
         };
 
-        std::array< std::function<bool()>, 3> Statement{
+        std::array< std::function<bool()>, 4> Statement{
             []{
                 return PerserRule::VariableDecl();
             },
@@ -464,7 +505,10 @@ namespace Perser{
             },
             []{
                 return PerserRule::FIN();
-            }
+            },
+            []{
+                return PerserRule::FunctionDecl();
+            },
         };
 
         std::array< std::function<bool()>, 2> VariableDecl{
@@ -530,19 +574,31 @@ namespace Perser{
 
         auto FIN()
          -> int{
-            log(0,"ConditionExpr");
+            log(0,"FIN");
             return Perser(Rule::FIN);
+        }
+
+        auto FunctionVariableDecl()
+         -> int{
+            log(0,"FunctionVariableDecl");
+            return Perser(Rule::FunctionVariableDecl);
+        }
+
+        auto FunctionDecl()
+         -> int{
+            log(0,"FunctionDecl");
+            return Perser(Rule::FunctionDecl);
         }
 
         auto ConditionExpr()
          -> int{
-                log(0,"ConditionExpr");
-                return Perser(Rule::ConditionExpr);
+            log(0,"ConditionExpr");
+            return Perser(Rule::ConditionExpr);
         }
 
         auto IfStatement()
          -> int{
-            log(0,"ConditionExpr");
+            log(0,"IfStatement");
             return Perser(Rule::IfStatement);
         }
 
@@ -580,23 +636,30 @@ auto main()
  -> int{	
 	std::string line;
     std::string term = ">>> ";
+    bool nest = false;
 	while(true){
 		std::cout<<term;
 		std::getline(std::cin, line);
 		tokens = lexer(line);
-/*
+
         for(auto t : tokens){
-            std::cout << t.getName() <<","<< t.getType() << "\n";
+            std::cout <<"\""<< t.getName() <<"\"  "<< t.getType() << "\n";
         }
-*/
+
         int result = Perser::perser();
         if(!result){
             std::cout<<"Syntax error! \n";
-        }
-        if(result==2){
+        }        
+        if(result==3 && nest){
             term = "... ";
+            continue;
+        }
+        if(result==2 || result == 4 ){
+            term = "... ";
+            nest = true;
         }else{
             term = ">>> ";
+            nest = false;
         }
         tokens.clear();
 	}

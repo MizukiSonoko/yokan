@@ -11,8 +11,6 @@
 #include <cstdarg>
 #include <memory>
 
-#include "kushi.hpp"
-
 class Token{
   public:
     enum Type{
@@ -61,9 +59,6 @@ class TypeSet{
     TypeSet(Token::Type type){
         types.push_back(type);
     }
-    ~TypeSet(){
-        std::cout<<"~~~~~~~~~~~~~~~~~~~DESTRUCTOR\n";
-    }
     TypeSet* OR(Token::Type type){
         types.push_back(type);
         return this;
@@ -77,6 +72,35 @@ class TypeSet{
         }
         return Token::ERROR;
     }
+};
+
+class FunctionAST{
+    public:
+    std::string name;
+
+};
+
+class StatementAST{
+    public:
+
+};
+
+class TranslationAST{
+    public:    
+        // * TODO 積極的にsetter gettterにしていこうな
+        std::vector<FunctionAST*> functionAst;
+        std::vector<StatementAST*> statementAst; 
+
+        ~TranslationAST(){
+            for(auto f : functionAst){
+                delete f;
+                f = NULL;
+            }
+            for(auto s : statementAst){
+                delete s;
+                s = NULL;
+            }
+        }
 };
 
 std::map<std::string, int> values;
@@ -242,6 +266,8 @@ void log(int layour, std::string msg){
 #endif
 }
 
+
+
 namespace Perser{
     int buf_index = 0;
     std::stack<int>       markers;
@@ -249,6 +275,7 @@ namespace Perser{
     std::string         curString;
 
     std::map<std::string, int> variableTable;
+    std::map<std::string, int> functionTable;
 
     auto fill(int n)
      -> bool{

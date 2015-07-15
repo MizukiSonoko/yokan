@@ -384,6 +384,49 @@ namespace Perser{
         };
     };
 
+    namespace speculate{
+
+        auto speculate(std::function<bool()> rule)
+         -> bool{
+            mark();
+            bool success = false;
+            if(
+                rule()
+            ){
+                success = true;
+            }
+            release();
+            return success;
+        }
+
+        template<std::size_t size>
+        auto speculate(std::array< std::function<bool()>,size> rules)
+         -> int{
+            int case_num = 1;
+            for(auto rule : rules){
+                if(speculate(rule)){
+                    return case_num;
+                }
+                case_num ++;
+            }
+            return 0;
+        }
+    };
+
+
+    template<std::size_t size>
+    auto Perser(std::array< std::function<bool()>,size> rules)
+     -> int{
+        int _result = speculate::speculate(rules);
+        if(!_result){
+            return 0;
+        }
+        rules[ _result-1 ]();
+        return _result;
+    }
+
+
+
     namespace PerserRule{
         int NUMBER();
         int FunctionVariableDecl();
@@ -414,6 +457,15 @@ namespace Perser{
             []{
                 return 
                     match(Token::NUMBER);
+            }
+        };
+
+        std::array< std::function<bool()>, 2> IDENTIFIER{
+            []{
+                return match(Token::NUMBER);
+            },
+            []{
+                return match(Token::NAME);
             }
         };
 
@@ -496,10 +548,7 @@ namespace Perser{
         std::array< std::function<bool()>, 2> BinaryExpr{
             []{
                 return 
-                    (
-                        match(Token::NAME) ||
-                        PerserRule::NUMBER()
-                    ) &&
+                    Perser::Perser(IDENTIFIER) &&
                     (
                         match(Token::OPE_ADD) ||
                         match(Token::OPE_SUB) ||
@@ -510,10 +559,7 @@ namespace Perser{
             },
             []{
                 return 
-                    (
-                        match(Token::NAME) ||
-                        PerserRule::NUMBER()
-                    ) &&
+                    Perser::Perser(IDENTIFIER) &&
                     (
                         match(Token::OPE_ADD) ||
                         match(Token::OPE_SUB) ||
@@ -560,34 +606,7 @@ namespace Perser{
         };
     }
 
-    namespace speculate{
 
-        auto speculate(std::function<bool()> rule)
-         -> bool{
-            mark();
-            bool success = false;
-            if(
-                rule()
-            ){
-                success = true;
-            }
-            release();
-            return success;
-        }
-
-        template<std::size_t size>
-        auto speculate(std::array< std::function<bool()>,size> rules)
-         -> int{
-            int case_num = 1;
-            for(auto rule : rules){
-                if(speculate(rule)){
-                    return case_num;
-                }
-                case_num ++;
-            }
-            return 0;
-        }
-    };
 
     namespace PerserRule{
 

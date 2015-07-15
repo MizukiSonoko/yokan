@@ -30,6 +30,7 @@ class Token{
         SEMICOLON,
         COLON,
         COMMA,
+        PERIOD,
         DQUOTATION,
         EQUAL,
         OPE_ADD, 
@@ -53,26 +54,6 @@ class Token{
     Type type;
 };
 
-class TypeSet{
-    std::vector<Token::Type> types;
-  public:
-    TypeSet(Token::Type type){
-        types.push_back(type);
-    }
-    TypeSet* OR(Token::Type type){
-        types.push_back(type);
-        return this;
-    }
-    int size(){
-        return types.size();
-    }
-    Token::Type at(int pos){
-        if(pos < this ->size()){
-            return types[pos];
-        }
-        return Token::ERROR;
-    }
-};
 
 std::map<std::string, int> values;
 std::list<Token>  tokens;
@@ -94,7 +75,7 @@ namespace Lexer{
     }
     auto isSpecial(char c)
      -> bool{
-     	char list[] = "\",.<>(){}[];:=+";
+     	char list[] = "!#$%&'\",.<>(){}[];:=+";
      	for(auto v : list){
      		if(v==c){
     			return true;
@@ -182,6 +163,9 @@ namespace Lexer{
                     break;
                 case ',':
                     tokens.push_back(Token(Token::COMMA,","));
+                    break;
+                case '.':
+                    tokens.push_back(Token(Token::PERIOD,"."));
                     break;
                 case '=':
                     tokens.push_back(Token(Token::EQUAL,"="));
@@ -345,21 +329,6 @@ namespace Perser{
         }
     } 
 
-    auto match(TypeSet* typeSet)
-     -> bool{
-        Token  token =  LT(1);     
-     
-        curString = token.getName();
-
-        for(int i = 0; i < typeSet->size(); i++){
-            Token::Type t = typeSet->at(i);
-            if(match(t)){
-                return true;
-            }
-        }
-        return false;
-    }    
-
     auto defVariable(std::string val_name)
      -> bool{
         if(variableTable.find(val_name) == variableTable.end()){
@@ -416,6 +385,7 @@ namespace Perser{
     };
 
     namespace PerserRule{
+        int NUMBER();
         int FunctionVariableDecl();
         int FunctionDecl();
         int ConditionExpr();
@@ -427,9 +397,23 @@ namespace Perser{
     };
 
     namespace Rule{
+
         std::array< std::function<bool()>, 1> FIN{
             []{
                 return match(Token::FIN);            
+            }
+        };
+
+        std::array< std::function<bool()>, 2> NUMBER{
+            []{
+                return
+                    match(Token::NUMBER) &&
+                    match(Token::PERIOD) &&
+                    match(Token::NUMBER);
+            },
+            []{
+                return 
+                    match(Token::NUMBER);
             }
         };
 
@@ -483,28 +467,28 @@ namespace Perser{
         std::array< std::function<bool()>, 2> ConditionExpr{
             []{
                 return 
-                    match(
-                        (new TypeSet(Token::NAME))->
-                                  OR(Token::NUMBER)
+                    (
+                        match(Token::NAME) ||
+                        PerserRule::NUMBER()
                     ) &&
                     match(Token::EQUAL) &&
                     match(Token::EQUAL) &&
-                    match(
-                        (new TypeSet(Token::NAME))->
-                                  OR(Token::NUMBER)
+                    (
+                        match(Token::NAME) ||
+                        PerserRule::NUMBER()
                     );
             },
             []{
                 return 
-                    match(
-                        (new TypeSet(Token::NAME))->
-                                  OR(Token::NUMBER)
+                    (
+                        match(Token::NAME) ||
+                        PerserRule::NUMBER()
                     ) &&
                     match(Token::EXCLAMATION) &&
                     match(Token::EQUAL) &&
-                    match(
-                        (new TypeSet(Token::NAME))->
-                                  OR(Token::NUMBER)
+                    (
+                        match(Token::NAME) ||
+                        PerserRule::NUMBER()
                     );
             }
         };
@@ -512,33 +496,33 @@ namespace Perser{
         std::array< std::function<bool()>, 2> BinaryExpr{
             []{
                 return 
-                    match(
-                    (new TypeSet(Token::NAME))->
-                        OR(Token::NUMBER)
+                    (
+                        match(Token::NAME) ||
+                        PerserRule::NUMBER()
                     ) &&
-                    match(
-                        (new TypeSet(Token::OPE_ADD))->
-                            OR(Token::OPE_SUB)->
-                            OR(Token::OPE_DIV)->
-                            OR(Token::OPE_MUL)
+                    (
+                        match(Token::OPE_ADD) ||
+                        match(Token::OPE_SUB) ||
+                        match(Token::OPE_DIV) ||
+                        match(Token::OPE_MUL)
                     ) &&
                     PerserRule::BinaryExpr();
             },
             []{
                 return 
-                    match(
-                        (new TypeSet(Token::NAME))->
-                            OR(Token::NUMBER)
+                    (
+                        match(Token::NAME) ||
+                        PerserRule::NUMBER()
                     ) &&
-                    match(
-                        (new TypeSet(Token::OPE_ADD))->
-                            OR(Token::OPE_SUB)->
-                            OR(Token::OPE_DIV)->
-                            OR(Token::OPE_MUL)
+                    (
+                        match(Token::OPE_ADD) ||
+                        match(Token::OPE_SUB) ||
+                        match(Token::OPE_DIV) ||
+                        match(Token::OPE_MUL)
                     ) &&
-                    match(
-                        (new TypeSet(Token::NAME))->
-                            OR(Token::NUMBER)
+                    (
+                        match(Token::NAME) ||
+                        PerserRule::NUMBER()
                     );
             }
         };
@@ -570,8 +554,8 @@ namespace Perser{
                 return
                     match(Token::NAME) &&
                     match(Token::EQUAL) &&
-                    match(Token::NUMBER) &&
-                    match(Token::FIN);                
+                    PerserRule::NUMBER() &&
+                    match(Token::FIN);    
             }
         };
     }
@@ -622,6 +606,12 @@ namespace Perser{
          -> int{
             log(0,"FIN");
             return Perser(Rule::FIN);
+        }
+
+        auto NUMBER()
+         -> int{
+            log(0,"NUMBER");
+            return Perser(Rule::NUMBER);
         }
 
         auto FunctionVariableDecl()

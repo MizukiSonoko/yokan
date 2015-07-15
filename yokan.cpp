@@ -7,9 +7,11 @@
 #include <functional>
 #include <initializer_list>
 #include <array> 
+#include <fstream>
  
 #include <cstdarg>
 #include <memory>
+#include <iterator>
 
 class Token{
   public:
@@ -481,7 +483,6 @@ namespace Perser{
                             match(Token::RBRACKET);
                     }
                 );                
-
             }
 
             {//Operator
@@ -685,8 +686,33 @@ namespace Perser{
     }
 }
 
-auto main()
- -> int{	
+int main(int argc, char* argv[]){	
+
+    std::ifstream ifs;
+
+    if(argc == 2){
+        ifs.open(argv[1]);
+        if(!ifs){
+            std::cout<<"error: no such file or directory: '"<< argv[1] <<"'\n";
+        }
+        std::istreambuf_iterator<char> it(ifs);
+        std::istreambuf_iterator<char> last;
+        std::string data(it, last); 
+
+        tokens = Lexer::lexer(data);
+        
+        for(auto t : tokens){
+            std::cout <<"\""<< t.getName() <<"\"  "<< t.getType() << "\n";
+        }
+
+        int result = Perser::perser();
+        if(!result){
+            std::cout<<"Syntax error! \n";
+        }
+
+        return 0;
+    }
+
 	std::string line;
     std::string term = ">>> ";
     bool nest = false;

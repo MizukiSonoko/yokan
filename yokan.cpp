@@ -425,6 +425,7 @@ namespace Perser{
 
         std::vector< std::function<bool()>> FIN;
         std::vector< std::function<bool()>> Number;
+        std::vector< std::function<bool()>> Operator;
         std::vector< std::function<bool()>> BinaryExpr;
         std::vector< std::function<bool()>> Identifire;
         std::vector< std::function<bool()>> FunctionVariableDecl;
@@ -463,16 +464,34 @@ namespace Perser{
             }
 
             {
+                Operator.push_back(
+                    []{
+                        return match(Token::OPE_ADD);
+                    }
+                );
+                Operator.push_back(
+                    []{
+                        return match(Token::OPE_SUB);
+                    }
+                );
+                Operator.push_back(
+                    []{
+                        return match(Token::OPE_DIV);
+                    }
+                );
+                Operator.push_back(
+                    []{
+                        return match(Token::OPE_MUL);
+                    }
+                );
+            }
+
+            {
                 BinaryExpr.push_back(
                     []{
                         return 
                             match(Identifire) &&
-                            (
-                                match(Token::OPE_ADD) ||
-                                match(Token::OPE_SUB) ||
-                                match(Token::OPE_DIV) ||
-                                match(Token::OPE_MUL)
-                            ) &&
+                            match(Operator) &&
                             match(BinaryExpr);
                     }
                 );
@@ -480,14 +499,8 @@ namespace Perser{
                      []{
                         return 
                             match(Identifire) &&
-                            (
-                                match(Token::OPE_ADD) ||
-                                match(Token::OPE_SUB) ||
-                                match(Token::OPE_DIV) ||
-                                match(Token::OPE_MUL)
-                            ) && 
-                           match(Identifire);
-
+                            match(Operator) &&
+                            match(Identifire);
                     }
                 );
             }

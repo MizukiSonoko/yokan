@@ -425,14 +425,16 @@ namespace Perser{
         // Rules
         std::vector< std::function<bool()>> FIN;
         std::vector< std::function<bool()>> Number;
+        std::vector< std::function<bool()>> List;
         std::vector< std::function<bool()>> Operator;
         std::vector< std::function<bool()>> BinaryExpr;
         std::vector< std::function<bool()>> Identifire;
-        std::vector< std::function<bool()>> FunctionVariableDecl;
+        std::vector< std::function<bool()>> ListVariableDecl;
         std::vector< std::function<bool()>> FunctionDecl;
         std::vector< std::function<bool()>> ConditionExpr;
         std::vector< std::function<bool()>> IfStatement;
         std::vector< std::function<bool()>> Statement;
+        std::vector< std::function<bool()>> RightValue;
         std::vector< std::function<bool()>> VariableDecl;
 
         auto setup()
@@ -461,6 +463,25 @@ namespace Perser{
                             match(Token::NUMBER);
                     }
                 );
+            }
+
+            {//List
+                List.push_back(
+                    []{
+                        return 
+                            match(Token::LBRACKET) &&                           
+                            match(ListVariableDecl) &&
+                            match(Token::RBRACKET);
+                    }
+                );
+                List.push_back(
+                    []{
+                        return 
+                            match(Token::LBRACKET) &&                           
+                            match(Token::RBRACKET);
+                    }
+                );                
+
             }
 
             {//Operator
@@ -518,19 +539,19 @@ namespace Perser{
                 );
             }
 
-            {//FunctionVariableDecl
-                FunctionVariableDecl.push_back(
+            {//ListVariableDecl
+                ListVariableDecl.push_back(
                     []{
                         return
-                            match(Token::NAME) &&
+                            match(RightValue) &&
                             match(Token::COMMA) &&
-                            match(FunctionVariableDecl);
+                            match(ListVariableDecl);
                     }
                 );
-                FunctionVariableDecl.push_back(
+                ListVariableDecl.push_back(
                     []{
                         return
-                            match(Token::NAME);
+                            match(RightValue);
                     }
                 );
             }
@@ -542,7 +563,7 @@ namespace Perser{
                             match(Token::NAME,"def") &&
                             match(Token::NAME) &&
                             match(Token::LPARENT) &&
-                            match(FunctionVariableDecl) &&
+                            match(ListVariableDecl) &&
                             match(Token::RPARENT) &&
                             match(Token::COLON) &&
                             match(Token::FIN)
@@ -619,23 +640,32 @@ namespace Perser{
                 );
             }
 
+            {//RightValue
+                RightValue.push_back(
+                    []{
+                        return match(BinaryExpr);
+                    }
+                );
+                RightValue.push_back(
+                    []{
+                        return match(Identifire);
+                    }
+                );
+                RightValue.push_back(
+                    []{
+                        return match(List);
+                    }
+                );
+            }
+
             {//VariableDecl
                 VariableDecl.push_back(
                     []{
                         return 
                             match(Token::NAME) &&
                             match(Token::EQUAL) && 
-                            match(BinaryExpr) &&
+                            match(RightValue) &&
                             match(Token::FIN);
-                    }
-                );
-                VariableDecl.push_back(
-                    []{
-                        return
-                            match(Token::NAME) &&
-                            match(Token::EQUAL) &&
-                            match(Number) &&
-                            match(Token::FIN);    
                     }
                 );
             }
@@ -664,11 +694,11 @@ auto main()
 		std::cout<<term;
 		std::getline(std::cin, line);
 		tokens = Lexer::lexer(line);
-/*
+        /*
         for(auto t : tokens){
             std::cout <<"\""<< t.getName() <<"\"  "<< t.getType() << "\n";
         }
-*/
+        */
         int result = Perser::perser();
         if(!result){
             std::cout<<"Syntax error! \n";

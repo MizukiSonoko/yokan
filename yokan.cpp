@@ -74,199 +74,162 @@ class TypeSet{
     }
 };
 
-class FunctionAST{
-    public:
-    std::string name;
-
-};
-
-class StatementAST{
-    public:
-
-};
-
-class TranslationAST{
-    public:    
-        // * TODO 積極的にsetter gettterにしていこうな
-        std::vector<FunctionAST*> functionAst;
-        std::vector<StatementAST*> statementAst; 
-
-        ~TranslationAST(){
-            for(auto f : functionAst){
-                delete f;
-                f = NULL;
-            }
-            for(auto s : statementAst){
-                delete s;
-                s = NULL;
-            }
-        }
-};
-
 std::map<std::string, int> values;
 std::list<Token>  tokens;
 
-auto isLetter(char c)
- -> bool{
-    if((c>='a'&&c<='z')||
-       (c>='A'&&c<='Z'))
-        return true;
-    return false;
-}
-auto isNumber(char c)
- -> bool{
-    if(c>='0'&&c<='9')
-        return true;
-    return false;
-}
-auto isSpecial(char c)
- -> bool{
- 	char list[] = "\",.<>(){}[];:=+";
- 	for(auto v : list){
- 		if(v==c){
-			return true;
-		}
-	}
-	return false;
-}
-auto lexer(std::string aLine)
- -> std::list<Token>{
-	std::list<Token> tokens;
+namespace Lexer{
 
-    bool isString = false;
-	std::string buffer = "";
-    for(auto c : aLine){
+    auto isLetter(char c)
+     -> bool{
+        if((c>='a'&&c<='z')||
+           (c>='A'&&c<='Z'))
+            return true;
+        return false;
+    }
+    auto isNumber(char c)
+     -> bool{
+        if(c>='0'&&c<='9')
+            return true;
+        return false;
+    }
+    auto isSpecial(char c)
+     -> bool{
+     	char list[] = "\",.<>(){}[];:=+";
+     	for(auto v : list){
+     		if(v==c){
+    			return true;
+    		}
+    	}
+    	return false;
+    }
+    auto lexer(std::string aLine)
+     -> std::list<Token>{
+    	std::list<Token> tokens;
 
-        if(isString){   
-            if(c=='"'){
-                tokens.push_back(Token(Token::NAME,buffer));
-                buffer = "";
-                isString = false;
+        bool isString = false;
+    	std::string buffer = "";
+        for(auto c : aLine){
+
+            if(isString){   
+                if(c=='"'){
+                    tokens.push_back(Token(Token::NAME,buffer));
+                    buffer = "";
+                    isString = false;
+                    continue;
+                }
+                buffer += c;
                 continue;
             }
-            buffer += c;
-            continue;
-        }
-        if(isLetter(c)||isNumber(c)){
-            buffer += c;
-            continue;
-        }
+            if(isLetter(c)||isNumber(c)){
+                buffer += c;
+                continue;
+            }
 
-        if(isSpecial(c)){
-        	if(buffer != ""){
-	            if(isNumber(buffer.at(0)))
-	                tokens.push_back(Token(Token::NUMBER,buffer));
-	            else
-	                tokens.push_back(Token(Token::NAME,buffer));
-		    	buffer = "";
-		    }
-        }
-
-        switch(c){
-            case ' ': case '\t':
-            case '\n':case '\r':
+            if(isSpecial(c)){
             	if(buffer != ""){
-		            if(isNumber(buffer.at(0)))
-		                tokens.push_back(Token(Token::NUMBER,buffer));
-		            else
-		                tokens.push_back(Token(Token::NAME,buffer));
-			    	buffer = "";
-			    }
-		    	break;
-            case '"':
-                isString = true;
-                if(!buffer.empty()){
-                    if(isNumber(buffer.at(0)))
-                        tokens.push_back(Token(Token::NUMBER,buffer));
-                    else
-                        tokens.push_back(Token(Token::NAME,buffer));
-                    buffer = "";
-                }                
-                break;
-            case '(':
-                tokens.push_back(Token(Token::LPARENT,"("));
-                break;
-            case ')':
-                tokens.push_back(Token(Token::RPARENT,")"));
-                break;
-            case ']':
-                tokens.push_back(Token(Token::RBRACKET,"]"));
-                break;
-            case '[':
-                tokens.push_back(Token(Token::LBRACKET,"["));
-                break;
-            case '>':
-                tokens.push_back(Token(Token::RABRACKET,">"));
-                break;
-            case '<':
-                tokens.push_back(Token(Token::LABRACKET,"<"));
-                break;
-            case ';':
-                tokens.push_back(Token(Token::SEMICOLON,";"));
-                break;
-            case ':':
-                tokens.push_back(Token(Token::COLON,":"));
-                break;
-            case ',':
-                tokens.push_back(Token(Token::COMMA,","));
-                break;
-            case '=':
-                tokens.push_back(Token(Token::EQUAL,"="));
-                break;
-            case '+':
-                tokens.push_back(Token(Token::OPE_ADD,"+"));
-                break;
-            case '-':
-                tokens.push_back(Token(Token::OPE_SUB,"-"));
-                break;
-            case '*':
-                tokens.push_back(Token(Token::OPE_MUL,"*"));
-                break;
-            case '/':
-                tokens.push_back(Token(Token::OPE_DIV,"/"));
-                break;
-            case '!':
-                tokens.push_back(Token(Token::EXCLAMATION,"!"));
-                break;
-            default:
-                if(!buffer.empty()){
-                    if(isNumber(buffer.at(0)))
-                        tokens.push_back(Token(Token::NUMBER,buffer));
-                    else
-                        tokens.push_back(Token(Token::NAME,buffer));
-                    buffer = "";
-                }else{
-                    std::cout<<"Error! invalid charator:"<< c <<std::endl;
-                    exit(1);
-                }
+    	            if(isNumber(buffer.at(0)))
+    	                tokens.push_back(Token(Token::NUMBER,buffer));
+    	            else
+    	                tokens.push_back(Token(Token::NAME,buffer));
+    		    	buffer = "";
+    		    }
+            }
+
+            switch(c){
+                case ' ': case '\t':
+                case '\n':case '\r':
+                	if(buffer != ""){
+    		            if(isNumber(buffer.at(0)))
+    		                tokens.push_back(Token(Token::NUMBER,buffer));
+    		            else
+    		                tokens.push_back(Token(Token::NAME,buffer));
+    			    	buffer = "";
+    			    }
+    		    	break;
+                case '"':
+                    isString = true;
+                    if(!buffer.empty()){
+                        if(isNumber(buffer.at(0)))
+                            tokens.push_back(Token(Token::NUMBER,buffer));
+                        else
+                            tokens.push_back(Token(Token::NAME,buffer));
+                        buffer = "";
+                    }                
+                    break;
+                case '(':
+                    tokens.push_back(Token(Token::LPARENT,"("));
+                    break;
+                case ')':
+                    tokens.push_back(Token(Token::RPARENT,")"));
+                    break;
+                case ']':
+                    tokens.push_back(Token(Token::RBRACKET,"]"));
+                    break;
+                case '[':
+                    tokens.push_back(Token(Token::LBRACKET,"["));
+                    break;
+                case '>':
+                    tokens.push_back(Token(Token::RABRACKET,">"));
+                    break;
+                case '<':
+                    tokens.push_back(Token(Token::LABRACKET,"<"));
+                    break;
+                case ';':
+                    tokens.push_back(Token(Token::SEMICOLON,";"));
+                    break;
+                case ':':
+                    tokens.push_back(Token(Token::COLON,":"));
+                    break;
+                case ',':
+                    tokens.push_back(Token(Token::COMMA,","));
+                    break;
+                case '=':
+                    tokens.push_back(Token(Token::EQUAL,"="));
+                    break;
+                case '+':
+                    tokens.push_back(Token(Token::OPE_ADD,"+"));
+                    break;
+                case '-':
+                    tokens.push_back(Token(Token::OPE_SUB,"-"));
+                    break;
+                case '*':
+                    tokens.push_back(Token(Token::OPE_MUL,"*"));
+                    break;
+                case '/':
+                    tokens.push_back(Token(Token::OPE_DIV,"/"));
+                    break;
+                case '!':
+                    tokens.push_back(Token(Token::EXCLAMATION,"!"));
+                    break;
+                default:
+                    if(!buffer.empty()){
+                        if(isNumber(buffer.at(0)))
+                            tokens.push_back(Token(Token::NUMBER,buffer));
+                        else
+                            tokens.push_back(Token(Token::NAME,buffer));
+                        buffer = "";
+                    }else{
+                        std::cout<<"Error! invalid charator:"<< c <<std::endl;
+                        exit(1);
+                    }
+            }
         }
+        if(!isSpecial(buffer[0])){
+            if(isNumber(buffer.at(0)))
+                tokens.push_back(Token(Token::NUMBER,buffer));
+            else
+                tokens.push_back(Token(Token::NAME,buffer));
+            buffer = "";
+        }else if(!buffer.empty()){
+            std::cout<<"Error! invalid charator:"<< buffer <<std::endl;
+        }
+
+        tokens.push_back(Token(Token::FIN,"<FIN>"));
+        tokens.push_back(Token(Token::MARGIN,"<MARGIN>"));
+
+    	return tokens;
     }
-    if(!isSpecial(buffer[0])){
-        if(isNumber(buffer.at(0)))
-            tokens.push_back(Token(Token::NUMBER,buffer));
-        else
-            tokens.push_back(Token(Token::NAME,buffer));
-        buffer = "";
-    }else if(!buffer.empty()){
-        std::cout<<"Error! invalid charator:"<< buffer <<std::endl;
-    }
-
-    tokens.push_back(Token(Token::FIN,"<FIN>"));
-    tokens.push_back(Token(Token::MARGIN,"<MARGIN>"));
-
-	return tokens;
-}
-
-void log(int layour, std::string msg){
-#ifdef DEBUG
-    for(int i=0; i < layour; i++){
-        std::cout<< " ";
-    }
-    std::cout<< msg <<"\n";
-#endif
-}
-
-
+};
 
 namespace Perser{
     int buf_index = 0;
@@ -276,6 +239,15 @@ namespace Perser{
 
     std::map<std::string, int> variableTable;
     std::map<std::string, int> functionTable;
+
+    void log(int layour, std::string msg){
+    #ifdef DEBUG
+        for(int i=0; i < layour; i++){
+            std::cout<< " ";
+        }
+        std::cout<< msg <<"\n";
+    #endif
+    }
 
     auto fill(int n)
      -> bool{
@@ -323,6 +295,7 @@ namespace Perser{
         return true;
     }
 
+
     auto isSpec()
      -> bool{
         return markers.size() > 0;
@@ -348,7 +321,7 @@ namespace Perser{
 
         Token::Type t = token.getType();
         log(1, "hope:"+std::to_string(type)+" real:"+std::to_string(t));
-        if(type==t){
+        if(type == t){
             nextToken();
             return true;
         }else{
@@ -394,6 +367,53 @@ namespace Perser{
         }
         return true;
     }
+
+    namespace AST{
+        class AST{
+
+        };
+
+        class FunctionVariableDeclAST : public AST{
+
+        };
+
+        class FunctionDeclAST : public AST{
+
+        };
+
+        class ConditionExprAST : public AST{
+
+        };     
+
+        class IfStatementAST : public AST{
+
+        };     
+
+        class BinaryExprAST : public AST{
+
+        };            
+
+        class VariableDeclAST : public AST{
+
+        };            
+     
+        class StatementAST : public AST{
+            public:
+        };
+
+        class TranslationAST : public AST{
+            public:    
+                // * TODO 積極的にsetter gettterにしていこうな
+                std::vector<StatementAST*> statementAst; 
+
+                ~TranslationAST(){
+                    for(auto s : statementAst){
+                        delete s;
+                        s = NULL;
+                    }
+                }
+        };
+    };
 
     namespace PerserRule{
         int FunctionVariableDecl();
@@ -583,7 +603,6 @@ namespace Perser{
             }
             return 0;
         }
-
     };
 
     namespace PerserRule{
@@ -667,12 +686,12 @@ auto main()
 	while(true){
 		std::cout<<term;
 		std::getline(std::cin, line);
-		tokens = lexer(line);
-
+		tokens = Lexer::lexer(line);
+/*
         for(auto t : tokens){
             std::cout <<"\""<< t.getName() <<"\"  "<< t.getType() << "\n";
         }
-
+*/
         int result = Perser::perser();
         if(!result){
             std::cout<<"Syntax error! \n";

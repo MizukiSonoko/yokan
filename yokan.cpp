@@ -280,7 +280,6 @@ namespace Perser{
         return true;
     }
 
-
     auto isSpec()
      -> bool{
         return markers.size() > 0;
@@ -386,7 +385,6 @@ namespace Perser{
     };
 
     namespace speculate{
-
         auto speculate(std::function<bool()> rule)
          -> bool{
             mark();
@@ -411,19 +409,6 @@ namespace Perser{
             }
             return 0;
         }
-
-        template<std::size_t size>
-        auto speculate(std::array< std::function<bool()>,size> rules)
-         -> int{
-            int case_num = 1;
-            for(auto rule : rules){
-                if(speculate(rule)){
-                    return case_num;
-                }
-                case_num ++;
-            }
-            return 0;
-        }
     };
 
     auto match(std::vector< std::function<bool()>> rules)
@@ -435,29 +420,6 @@ namespace Perser{
         rules[ _result-1 ]();
         return _result;
     }
-
-    template<std::size_t size>
-    auto match(std::array< std::function<bool()>,size> rules)
-     -> int{
-        int _result = speculate::speculate(rules);
-        if(!_result){
-            return 0;
-        }
-        rules[ _result-1 ]();
-        return _result;
-    }
-
-    namespace PerserRule{
-        int NUMBER();
-        int FunctionVariableDecl();
-        int FunctionDecl();
-        int ConditionExpr();
-        int IfStatement();
-        int BinaryExpr();
-        int VariableDecl();
-        int Statement();
-        int FIN();
-    };
 
     namespace Rule{
 
@@ -667,20 +629,6 @@ namespace Perser{
             return true;
         }        
     }
-
-    namespace PerserRule{
-
-        template<std::size_t size>
-        auto Perser(std::array< std::function<bool()>,size> rules)
-         -> int{
-            int _result = speculate::speculate(rules);
-            if(!_result){
-                return 0;
-            }
-            rules[ _result-1 ]();
-            return _result;
-        }
-    };
 
     auto perser()
      -> int{

@@ -43,6 +43,7 @@ class Token{
 	    name = aName;
 	    type = aType;
     }
+
     Type getType(){
     	return type;
 	}
@@ -399,6 +400,18 @@ namespace Perser{
             return success;
         }
 
+        auto speculate(std::vector< std::function<bool()>> rules)
+         -> int{
+            int case_num = 1;
+            for(auto rule : rules){
+                if(speculate(rule)){
+                    return case_num;
+                }
+                case_num ++;
+            }
+            return 0;
+        }
+
         template<std::size_t size>
         auto speculate(std::array< std::function<bool()>,size> rules)
          -> int{
@@ -413,9 +426,7 @@ namespace Perser{
         }
     };
 
-
-    template<std::size_t size>
-    auto Perser(std::array< std::function<bool()>,size> rules)
+    auto match(std::vector< std::function<bool()>> rules)
      -> int{
         int _result = speculate::speculate(rules);
         if(!_result){
@@ -425,7 +436,16 @@ namespace Perser{
         return _result;
     }
 
-
+    template<std::size_t size>
+    auto match(std::array< std::function<bool()>,size> rules)
+     -> int{
+        int _result = speculate::speculate(rules);
+        if(!_result){
+            return 0;
+        }
+        rules[ _result-1 ]();
+        return _result;
+    }
 
     namespace PerserRule{
         int NUMBER();
@@ -441,172 +461,212 @@ namespace Perser{
 
     namespace Rule{
 
-        std::array< std::function<bool()>, 1> FIN{
-            []{
-                return match(Token::FIN);            
+        std::vector< std::function<bool()>> FIN;
+        std::vector< std::function<bool()>> Number;
+        std::vector< std::function<bool()>> BinaryExpr;
+        std::vector< std::function<bool()>> Identifire;
+        std::vector< std::function<bool()>> FunctionVariableDecl;
+        std::vector< std::function<bool()>> FunctionDecl;
+        std::vector< std::function<bool()>> ConditionExpr;
+        std::vector< std::function<bool()>> IfStatement;
+        std::vector< std::function<bool()>> Statement;
+        std::vector< std::function<bool()>> VariableDecl;
+
+        auto setup()
+         -> bool{
+            
+            {
+                FIN.push_back( 
+                    []{
+                        return match(Token::FIN);            
+                    }
+                );
             }
-        };
 
-        std::array< std::function<bool()>, 2> NUMBER{
-            []{
-                return
-                    match(Token::NUMBER) &&
-                    match(Token::PERIOD) &&
-                    match(Token::NUMBER);
-            },
-            []{
-                return 
-                    match(Token::NUMBER);
+            {
+                Number.push_back(
+                    []{
+                        return
+                            match(Token::NUMBER) &&
+                            match(Token::PERIOD) &&
+                            match(Token::NUMBER);
+                    }
+                );
+                Number.push_back(
+                    []{
+                        return 
+                            match(Token::NUMBER);
+                    }
+                );
             }
-        };
 
-        std::array< std::function<bool()>, 2> IDENTIFIER{
-            []{
-                return match(Token::NUMBER);
-            },
-            []{
-                return match(Token::NAME);
+            {
+                BinaryExpr.push_back(
+                    []{
+                        return 
+                            match(Identifire) &&
+                            (
+                                match(Token::OPE_ADD) ||
+                                match(Token::OPE_SUB) ||
+                                match(Token::OPE_DIV) ||
+                                match(Token::OPE_MUL)
+                            ) &&
+                            match(BinaryExpr);
+                    }
+                );
+                BinaryExpr.push_back(
+                     []{
+                        return 
+                            match(Identifire) &&
+                            (
+                                match(Token::OPE_ADD) ||
+                                match(Token::OPE_SUB) ||
+                                match(Token::OPE_DIV) ||
+                                match(Token::OPE_MUL)
+                            ) && 
+                           match(Identifire);
+
+                    }
+                );
             }
-        };
 
-        std::array< std::function<bool()>, 2> FunctionVariableDecl{
-            []{
-                return
-                    match(Token::NAME) &&
-                    match(Token::COMMA) &&
-                    PerserRule::FunctionVariableDecl();
-            },
-            []{
-                return
-                    match(Token::NAME);
+            {
+                Identifire.push_back(
+                    []{
+                        return match(Number);
+                    }
+                );
+                Identifire.push_back(
+                    []{
+                        return match(Token::NAME);
+                    }
+                );
             }
-        };
 
-        std::array< std::function<bool()>, 2> FunctionDecl{
-            []{
-                return 
-                    match(Token::NAME,"def") &&
-                    match(Token::NAME) &&
-                    match(Token::LPARENT) &&
-                    PerserRule::FunctionVariableDecl() &&
-                    match(Token::RPARENT) &&
-                    match(Token::COLON) &&
-                    match(Token::FIN)
-                    ? 2 : 0;
-            },
-            []{
-                return 
-                    match(Token::NAME,"def") &&
-                    match(Token::NAME) &&
-                    match(Token::LPARENT) &&
-                    match(Token::RPARENT) &&
-                    match(Token::COLON) &&
-                    match(Token::FIN) 
-                    ? 2 : 0;
-            }            
-        };
-
-        std::array< std::function<bool()>, 1> IfStatement{
-            []{
-                return 
-                    match(Token::NAME,"if") &&
-                    PerserRule::ConditionExpr() &&
-                    match(Token::COLON) &&
-                    match(Token::FIN) ? 2 : 0;
+            {
+                FunctionVariableDecl.push_back(
+                    []{
+                        return
+                            match(Token::NAME) &&
+                            match(Token::COMMA) &&
+                            match(FunctionVariableDecl);
+                    }
+                );
+                FunctionVariableDecl.push_back(
+                    []{
+                        return
+                            match(Token::NAME);
+                    }
+                );
             }
-        };
 
-        std::array< std::function<bool()>, 2> ConditionExpr{
-            []{
-                return 
-                    (
-                        match(Token::NAME) ||
-                        PerserRule::NUMBER()
-                    ) &&
-                    match(Token::EQUAL) &&
-                    match(Token::EQUAL) &&
-                    (
-                        match(Token::NAME) ||
-                        PerserRule::NUMBER()
-                    );
-            },
-            []{
-                return 
-                    (
-                        match(Token::NAME) ||
-                        PerserRule::NUMBER()
-                    ) &&
-                    match(Token::EXCLAMATION) &&
-                    match(Token::EQUAL) &&
-                    (
-                        match(Token::NAME) ||
-                        PerserRule::NUMBER()
-                    );
+            {
+                FunctionDecl.push_back(
+                    []{
+                        return 
+                            match(Token::NAME,"def") &&
+                            match(Token::NAME) &&
+                            match(Token::LPARENT) &&
+                            match(FunctionVariableDecl) &&
+                            match(Token::RPARENT) &&
+                            match(Token::COLON) &&
+                            match(Token::FIN)
+                            ? 2 : 0;
+                    }
+                );
+                FunctionDecl.push_back(
+                    []{
+                        return 
+                            match(Token::NAME,"def") &&
+                            match(Token::NAME) &&
+                            match(Token::LPARENT) &&
+                            match(Token::RPARENT) &&
+                            match(Token::COLON) &&
+                            match(Token::FIN) 
+                            ? 2 : 0;
+                    } 
+                );
             }
-        };
 
-        std::array< std::function<bool()>, 2> BinaryExpr{
-            []{
-                return 
-                    Perser::Perser(IDENTIFIER) &&
-                    (
-                        match(Token::OPE_ADD) ||
-                        match(Token::OPE_SUB) ||
-                        match(Token::OPE_DIV) ||
-                        match(Token::OPE_MUL)
-                    ) &&
-                    PerserRule::BinaryExpr();
-            },
-            []{
-                return 
-                    Perser::Perser(IDENTIFIER) &&
-                    (
-                        match(Token::OPE_ADD) ||
-                        match(Token::OPE_SUB) ||
-                        match(Token::OPE_DIV) ||
-                        match(Token::OPE_MUL)
-                    ) &&
-                    (
-                        match(Token::NAME) ||
-                        PerserRule::NUMBER()
-                    );
+            {
+                ConditionExpr.push_back(
+                    []{
+                        return 
+                            match(Identifire) &&
+                            match(Token::EQUAL) &&
+                            match(Token::EQUAL) &&
+                            match(Identifire);
+                    }                    
+                );
+                ConditionExpr.push_back(
+                    []{
+                        return 
+                            match(Identifire) &&
+                            match(Token::EXCLAMATION) &&
+                            match(Token::EQUAL) &&
+                            match(Identifire);
+                    }
+                );
             }
-        };
 
-        std::array< std::function<bool()>, 4> Statement{
-            []{
-                return PerserRule::VariableDecl();
-            },
-            []{
-                return PerserRule::IfStatement();
-            },
-            []{
-                return PerserRule::FIN();
-            },
-            []{
-                return PerserRule::FunctionDecl();
-            },
-        };
-
-        std::array< std::function<bool()>, 2> VariableDecl{
-            []{
-                return 
-                    match(Token::NAME) &&
-                    match(Token::EQUAL) && 
-                    PerserRule::BinaryExpr() &&
-                    match(Token::FIN);
-            },
-            []{
-                return
-                    match(Token::NAME) &&
-                    match(Token::EQUAL) &&
-                    PerserRule::NUMBER() &&
-                    match(Token::FIN);    
+            {
+                IfStatement.push_back(
+                    []{
+                        return 
+                            match(Token::NAME,"if") &&
+                            match(ConditionExpr) &&
+                            match(Token::COLON) &&
+                            match(Token::FIN) ? 2 : 0;
+                    }
+                );
             }
-        };
+
+            {
+                Statement.push_back(
+                    []{
+                        return match(VariableDecl);
+                    }
+                );
+                Statement.push_back(
+                    []{
+                        return match(IfStatement);
+                    }
+                );
+                Statement.push_back(
+                    []{
+                        return match(FIN);
+                    }
+                );
+                Statement.push_back(
+                    []{
+                        return match(FunctionDecl);
+                    }
+                );
+            }
+
+            {
+                VariableDecl.push_back(
+                    []{
+                        return 
+                            match(Token::NAME) &&
+                            match(Token::EQUAL) && 
+                            match(BinaryExpr) &&
+                            match(Token::FIN);
+                    }
+                );
+                VariableDecl.push_back(
+                    []{
+                        return
+                            match(Token::NAME) &&
+                            match(Token::EQUAL) &&
+                            match(Number) &&
+                            match(Token::FIN);    
+                    }
+                );
+            }
+            return true;
+        }        
     }
-
-
 
     namespace PerserRule{
 
@@ -620,60 +680,6 @@ namespace Perser{
             rules[ _result-1 ]();
             return _result;
         }
-
-        auto FIN()
-         -> int{
-            log(0,"FIN");
-            return Perser(Rule::FIN);
-        }
-
-        auto NUMBER()
-         -> int{
-            log(0,"NUMBER");
-            return Perser(Rule::NUMBER);
-        }
-
-        auto FunctionVariableDecl()
-         -> int{
-            log(0,"FunctionVariableDecl");
-            return Perser(Rule::FunctionVariableDecl);
-        }
-
-        auto FunctionDecl()
-         -> int{
-            log(0,"FunctionDecl");
-            return Perser(Rule::FunctionDecl);
-        }
-
-        auto ConditionExpr()
-         -> int{
-            log(0,"ConditionExpr");
-            return Perser(Rule::ConditionExpr);
-        }
-
-        auto IfStatement()
-         -> int{
-            log(0,"IfStatement");
-            return Perser(Rule::IfStatement);
-        }
-
-        auto BinaryExpr()
-         -> int{
-            log(0,"BinaryExpr");  
-            return Perser(Rule::BinaryExpr);
-        }
-
-        auto Statement()
-         -> int{
-            log(0,"Statement");  
-            return Perser(Rule::Statement);
-        }
-
-        auto VariableDecl()
-         -> int{
-            log(1,"VariableDecl");
-            return Perser(Rule::VariableDecl);
-        }
     };
 
     auto perser()
@@ -682,8 +688,9 @@ namespace Perser{
         while(markers.size()!=0){
             markers.pop();
         }
-        headTokens.clear();        
-        return PerserRule::Statement();
+        headTokens.clear();   
+        Rule::setup();     
+        return match(Rule::Statement);
     }
 }
 

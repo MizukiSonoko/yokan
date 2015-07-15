@@ -422,7 +422,7 @@ namespace Perser{
     }
 
     namespace Rule{
-
+        // Rules
         std::vector< std::function<bool()>> FIN;
         std::vector< std::function<bool()>> Number;
         std::vector< std::function<bool()>> Operator;
@@ -438,7 +438,7 @@ namespace Perser{
         auto setup()
          -> bool{
             
-            {
+            {//Fin
                 FIN.push_back( 
                     []{
                         return match(Token::FIN);            
@@ -446,7 +446,7 @@ namespace Perser{
                 );
             }
 
-            {
+            {//Number
                 Number.push_back(
                     []{
                         return
@@ -463,7 +463,7 @@ namespace Perser{
                 );
             }
 
-            {
+            {//Operator
                 Operator.push_back(
                     []{
                         return match(Token::OPE_ADD);
@@ -486,7 +486,7 @@ namespace Perser{
                 );
             }
 
-            {
+            {//BinaryExpr
                 BinaryExpr.push_back(
                     []{
                         return 
@@ -505,7 +505,7 @@ namespace Perser{
                 );
             }
 
-            {
+            {//Identifire
                 Identifire.push_back(
                     []{
                         return match(Number);
@@ -518,7 +518,7 @@ namespace Perser{
                 );
             }
 
-            {
+            {//FunctionVariableDecl
                 FunctionVariableDecl.push_back(
                     []{
                         return
@@ -535,7 +535,7 @@ namespace Perser{
                 );
             }
 
-            {
+            {//FunctionDecl
                 FunctionDecl.push_back(
                     []{
                         return 
@@ -563,7 +563,7 @@ namespace Perser{
                 );
             }
 
-            {
+            {//ConditionExpr
                 ConditionExpr.push_back(
                     []{
                         return 
@@ -584,7 +584,7 @@ namespace Perser{
                 );
             }
 
-            {
+            {//IfStatement
                 IfStatement.push_back(
                     []{
                         return 
@@ -596,7 +596,7 @@ namespace Perser{
                 );
             }
 
-            {
+            {//Statement
                 Statement.push_back(
                     []{
                         return match(VariableDecl);
@@ -619,7 +619,7 @@ namespace Perser{
                 );
             }
 
-            {
+            {//VariableDecl
                 VariableDecl.push_back(
                     []{
                         return 

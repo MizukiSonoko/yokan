@@ -13,6 +13,9 @@
 #include <memory>
 #include <iterator>
 
+#include <chrono>
+#include <iomanip>
+
 class Token{
   public:
     enum Type{
@@ -701,13 +704,18 @@ int main(int argc, char* argv[]){
         std::istreambuf_iterator<char> last;
         std::string data(it, last); 
 
+        auto sTime = std::chrono::system_clock::now();
         tokens = Lexer::lexer(data);
 
         for(auto t : tokens){
             std::cout <<"\""<< t.getName() <<"\"  "<< t.getType() << "\n";
         }
 
-        int result = Perser::perser();
+        auto result = Perser::perser();
+        auto eTime = std::chrono::system_clock::now();
+        auto timeSpan = eTime - sTime;
+        std::cout<< "Time:"<<std::setw(6)<< std::chrono::duration_cast<std::chrono::milliseconds>(timeSpan).count() <<"[ms]\n";
+
         if(!result){
             std::cout<<"Syntax error! \n";
         }else{
@@ -723,6 +731,9 @@ int main(int argc, char* argv[]){
 	while(true){
 		std::cout<<term;
 		std::getline(std::cin, line);
+
+        auto sTime = std::chrono::system_clock::now();
+
 		tokens = Lexer::lexer(line);
         /*
         for(auto t : tokens){
@@ -730,6 +741,10 @@ int main(int argc, char* argv[]){
         }
         */
         int result = Perser::perser();
+        auto eTime = std::chrono::system_clock::now();
+        auto timeSpan = eTime - sTime;
+        std::cout<< "Time: "<<std::setw(6)<< std::chrono::duration_cast<std::chrono::milliseconds>(timeSpan).count() <<"[ms]\n";
+        
         if(!result){
             std::cout<<"Syntax error! \n";
         }        

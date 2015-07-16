@@ -236,100 +236,141 @@ namespace Perser{
     #endif
     }
 
-    auto fill(int n)
-     -> bool{
-        for(int i = 0;i < n;i++){
-            headTokens.push_back(tokens.front());
-            tokens.pop_front();
+    namespace Core{
+
+        auto fill(int n)
+         -> bool{
+            for(int i = 0;i < n;i++){
+                headTokens.push_back(tokens.front());
+                tokens.pop_front();
+            }
+            return true;
         }
-        return true;
-    }
 
-    auto sync(int i)
-     -> bool{
-        if(buf_index + i > headTokens.size()){
-            int n = (buf_index + i) - (headTokens.size());
-            fill(n);
+        auto sync(int i)
+         -> bool{
+            if(buf_index + i > headTokens.size()){
+                int n = (buf_index + i) - (headTokens.size());
+                fill(n);
+            }
+            return true;
         }
-        return true;
-    }
 
-    auto LT(int i)
-     -> Token{        
-        sync(i);
-        return headTokens[buf_index+i-1];
-    }
-
-    auto mark()
-     -> int{
-        markers.push(buf_index);
-        return buf_index;
-    }
-
-    auto seek(int index)
-     -> bool{
-        buf_index = index;
-        return true;
-    }
-
-    auto release()
-     -> bool{
-        if(!markers.empty()){
-            int marker = markers.top();
-            markers.pop();
-            seek(marker);
+        auto LT(int i)
+         -> Token{        
+            sync(i);
+            return headTokens[buf_index+i-1];
         }
-        return true;
-    }
 
-    auto isSpec()
-     -> bool{
-        return markers.size() > 0;
-    }
-
-    auto nextToken()
-     -> bool{
-        buf_index++;
-        if(buf_index == headTokens.size() && !isSpec()){
-            buf_index = 0;
-            headTokens.clear();
-            return false; 
+        auto mark()
+         -> int{
+            markers.push(buf_index);
+            return buf_index;
         }
-        sync(1);   
-        return true;
+
+        auto seek(int index)
+         -> bool{
+            buf_index = index;
+            return true;
+        }
+
+        auto release()
+         -> bool{
+            if(!markers.empty()){
+                int marker = markers.top();
+                markers.pop();
+                seek(marker);
+            }
+            return true;
+        }
+
+        auto isSpec()
+         -> bool{
+            return markers.size() > 0;
+        }
+
+        auto nextToken()
+         -> bool{
+            buf_index++;
+            if(buf_index == headTokens.size() && !isSpec()){
+                buf_index = 0;
+                headTokens.clear();
+                return false; 
+            }
+            sync(1);   
+            return true;
+        }       
     }
+
+    namespace speculate{
+        auto speculate(std::function<bool()> rule)
+         -> bool{
+            Core::mark();
+            bool success = false;
+            if(
+                rule()
+            ){
+                success = true;
+            }
+            Core::release();
+            return success;
+        }
+
+        auto speculate(std::vector< std::function<bool()>> rules)
+         -> int{
+            int case_num = 1;
+            for(auto rule : rules){
+                if(speculate(rule)){
+                    return case_num;
+                }
+                case_num ++;
+            }
+            return 0;
+        }
+    };
+
 
     auto match(Token::Type type)
-     -> bool{
-        Token  token =  LT(1);     
-     
-        curString = token.getName();
+         -> bool{
+            Token  token =  Core::LT(1);     
+         
+            curString = token.getName();
 
-        Token::Type t = token.getType();
-        log(1, "hope:"+std::to_string(type)+" real:"+std::to_string(t));
-        if(type == t){
-            nextToken();
-            return true;
-        }else{
-            return false;
+            Token::Type t = token.getType();
+            log(1, "hope:"+std::to_string(type)+" real:"+std::to_string(t));
+            if(type == t){
+                Core::nextToken();
+                return true;
+            }else{
+                return false;
+            }
         }
-    }
 
     auto match(Token::Type type, std::string reserved)
      -> bool{
-        Token  token =  LT(1);     
+        Token  token =  Core::LT(1);     
      
         curString = token.getName();
 
         Token::Type t = token.getType();
         log(1, "hope:"+std::to_string(type)+" real:"+std::to_string(t));
         if(type == t and curString == reserved){
-            nextToken();
+            Core::nextToken();
             return true;
         }else{
             return false;
         }
     } 
+
+    auto match(std::vector< std::function<bool()>> rules)
+     -> int{
+        int _result = speculate::speculate(rules);
+        if(!_result){
+            return 0;
+        }
+        rules[ _result-1 ]();
+        return _result;
+    }
 
     auto defVariable(std::string val_name)
      -> bool{
@@ -385,43 +426,6 @@ namespace Perser{
                 }
         };
     };
-
-    namespace speculate{
-        auto speculate(std::function<bool()> rule)
-         -> bool{
-            mark();
-            bool success = false;
-            if(
-                rule()
-            ){
-                success = true;
-            }
-            release();
-            return success;
-        }
-
-        auto speculate(std::vector< std::function<bool()>> rules)
-         -> int{
-            int case_num = 1;
-            for(auto rule : rules){
-                if(speculate(rule)){
-                    return case_num;
-                }
-                case_num ++;
-            }
-            return 0;
-        }
-    };
-
-    auto match(std::vector< std::function<bool()>> rules)
-     -> int{
-        int _result = speculate::speculate(rules);
-        if(!_result){
-            return 0;
-        }
-        rules[ _result-1 ]();
-        return _result;
-    }
 
     namespace Rule{
         // Rules
@@ -700,7 +704,7 @@ int main(int argc, char* argv[]){
         std::string data(it, last); 
 
         tokens = Lexer::lexer(data);
-        
+
         for(auto t : tokens){
             std::cout <<"\""<< t.getName() <<"\"  "<< t.getType() << "\n";
         }
@@ -708,6 +712,8 @@ int main(int argc, char* argv[]){
         int result = Perser::perser();
         if(!result){
             std::cout<<"Syntax error! \n";
+        }else{
+            std::cout<<"Syntax correct! \n";
         }
 
         return 0;

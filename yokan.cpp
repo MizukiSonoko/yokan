@@ -221,6 +221,9 @@ namespace Lexer{
 };
 
 namespace Perser{
+
+    bool isFirst = true;
+
     int buf_index = 0;
     std::stack<int>       markers;
     std::vector<Token> headTokens;
@@ -686,7 +689,12 @@ namespace Perser{
             markers.pop();
         }
         headTokens.clear();   
-        Rule::setup();     
+        
+        if(isFirst){
+            Rule::setup();     
+            isFirst = false;
+        }
+        
         return match(Rule::Statement);
     }
 }

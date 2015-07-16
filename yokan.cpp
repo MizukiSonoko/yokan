@@ -57,7 +57,6 @@ class Token{
     Type type;
 };
 
-
 std::map<std::string, int> values;
 std::list<Token>  tokens;
 
@@ -329,7 +328,6 @@ namespace Perser{
         }
     };
 
-
     auto match(Token::Type type)
          -> bool{
             Token  token =  Core::LT(1);     
@@ -344,7 +342,7 @@ namespace Perser{
             }else{
                 return false;
             }
-        }
+    }
 
     auto match(Token::Type type, std::string reserved)
      -> bool{
@@ -750,5 +748,3 @@ int main(int argc, char* argv[]){
 	}
 	return 0;
 }
-
-

@@ -13,6 +13,7 @@
 #include <memory>
 #include <iterator>
 
+#include <regex>
 #include <chrono>
 #include <iomanip>
 
@@ -65,6 +66,8 @@ std::list<Token>  tokens;
 
 namespace Lexer{
 
+    std::regex reg(R"([^0-9^a-z^A-Z]+)");
+
     auto isLetter(char c)
      -> bool{
         if((c>='a'&&c<='z')||
@@ -80,14 +83,18 @@ namespace Lexer{
     }
     auto isSpecial(char c)
      -> bool{
-     	char list[] = "!#$%&'\",.<>(){}[];:=+";
-     	for(auto v : list){
-     		if(v==c){
-    			return true;
-    		}
-    	}
+
+        if( c == '^'){
+            return true;
+        }
+
+        std::string str({c});
+        if(std::regex_match( str, reg)){
+            return true;
+        }
     	return false;
     }
+
     auto lexer(std::string aLine)
      -> std::list<Token>{
     	std::list<Token> tokens;
@@ -341,7 +348,6 @@ namespace Perser{
             curString = token.getName();
 
             Token::Type t = token.getType();
-            log(1, "hope:"+std::to_string(type)+" real:"+std::to_string(t));
             if(type == t){
                 Core::nextToken();
                 return true;
@@ -357,7 +363,6 @@ namespace Perser{
         curString = token.getName();
 
         Token::Type t = token.getType();
-        log(1, "hope:"+std::to_string(type)+" real:"+std::to_string(t));
         if(type == t and curString == reserved){
             Core::nextToken();
             return true;
@@ -475,9 +480,29 @@ namespace Perser{
                 );
             }
 
+            {//ListVariableDecl
+                ListVariableDecl.push_back(
+                    []{
+                        log(1, "ListVariableDecl: RightValue, ListVariableDecl");
+                        return
+                            match(RightValue) &&
+                            match(Token::COMMA) &&
+                            match(ListVariableDecl);
+                    }
+                );
+                ListVariableDecl.push_back(
+                    []{
+                        log(1, "ListVariableDecl: RightValue");
+                        return
+                            match(RightValue);
+                    }
+                );
+            }
+
             {//List
                 List.push_back(
                     []{
+                        log(1, "List: [ VariableDecl ]");
                         return 
                             match(Token::LBRACKET) &&                           
                             match(ListVariableDecl) &&
@@ -486,6 +511,7 @@ namespace Perser{
                 );
                 List.push_back(
                     []{
+                        log(1, "List: [ ]");
                         return 
                             match(Token::LBRACKET) &&                           
                             match(Token::RBRACKET);
@@ -544,23 +570,6 @@ namespace Perser{
                 Identifire.push_back(
                     []{
                         return match(Token::NAME);
-                    }
-                );
-            }
-
-            {//ListVariableDecl
-                ListVariableDecl.push_back(
-                    []{
-                        return
-                            match(RightValue) &&
-                            match(Token::COMMA) &&
-                            match(ListVariableDecl);
-                    }
-                );
-                ListVariableDecl.push_back(
-                    []{
-                        return
-                            match(RightValue);
                     }
                 );
             }
@@ -652,16 +661,19 @@ namespace Perser{
             {//RightValue
                 RightValue.push_back(
                     []{
+                        log(2, "RightValue: BinaryExpr");
                         return match(BinaryExpr);
                     }
                 );
                 RightValue.push_back(
                     []{
+                        log(2, "RightValue: Identifire");
                         return match(Identifire);
                     }
                 );
                 RightValue.push_back(
                     []{
+                        log(2, "RightValue: List");
                         return match(List);
                     }
                 );

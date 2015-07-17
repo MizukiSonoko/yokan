@@ -66,30 +66,37 @@ std::list<Token>  tokens;
 
 namespace Lexer{
 
-    std::regex reg(R"([^0-9^a-z^A-Z]+)");
+    std::regex reg_special(R"([^0-9^a-z^A-Z]+)");
+    std::regex reg_number(R"([0-9]+)");
+    std::regex reg_letter(R"([a-zA-Z]+)");
 
     auto isLetter(char c)
      -> bool{
-        if((c>='a'&&c<='z')||
-           (c>='A'&&c<='Z'))
+        std::string str({c});
+        if(std::regex_match( str, reg_letter)){
             return true;
+        }
         return false;
     }
     auto isNumber(char c)
      -> bool{
-        if(c>='0'&&c<='9')
+        
+        std::string str({c});
+        if(std::regex_match( str, reg_number)){
             return true;
+        }
         return false;
     }
     auto isSpecial(char c)
      -> bool{
 
+        // TODO 正規表現にする
         if( c == '^'){
             return true;
         }
 
         std::string str({c});
-        if(std::regex_match( str, reg)){
+        if(std::regex_match( str, reg_special)){
             return true;
         }
     	return false;

@@ -356,9 +356,10 @@ namespace Perser{
          
             curString = token.getName();
 
+            std::cout<<"["<<i<<"] curString:"<<curString<<"\n";
             Token::Type t = token.getType();
             if(type == t){
-                Core::nextToken();
+//                Core::nextToken();
                 return true;
             }else{
                 return false;
@@ -370,7 +371,7 @@ namespace Perser{
             Token  token =  Core::LT(1);     
          
             curString = token.getName();
-
+            std::cout<<"curString:"<<curString<<"\n";
             Token::Type t = token.getType();
             if(type == t){
                 Core::nextToken();
@@ -719,36 +720,32 @@ namespace Perser{
             }
 
             {//TestCore
-                Statement.push_back(
-                    []{
-                        return match(VariableDecl);
-                    }
-                );
-                Statement.push_back(
-                    []{
-                        return match(IfStatement);
-                    }
-                );
-                Statement.push_back(
-                    []{
-                        return match(FIN);
-                    }
-                );
-                Statement.push_back(
-                    []{
-                        return match(FunctionDecl);
-                    }
-                );
-            }
-
-            {
                 TestCore.push_back(
                     []{
-                        return match(FunctionDecl);
+                        return 
+                            match(Token::LBRACKET) &&
+                            match(Token::RBRACKET, 2) &&
+                            match(Identifire);
                     }
                 );
+                TestCore.push_back(
+                    []{
+                        log(1, "List: [ VariableDecl ]");
+                        return 
+                            match(Token::LBRACKET) &&                           
+                            match(ListVariableDecl) &&
+                            match(Token::RBRACKET);
+                    }
+                );
+                TestCore.push_back(
+                    []{
+                        log(1, "List: [ ]");
+                        return 
+                            match(Token::LBRACKET) &&                           
+                            match(Token::RBRACKET);
+                    }
+                );                 
             }
-
 
             return true;
         }        
@@ -767,7 +764,7 @@ namespace Perser{
             isFirst = false;
         }
         
-        return match(Rule::Statement);
+        return match(Rule::TestCore);
     }
 }
 

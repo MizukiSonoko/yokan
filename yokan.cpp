@@ -68,7 +68,7 @@ namespace Lexer{
 
     std::regex reg_special(R"([^0-9^a-z^A-Z]+)");
     std::regex reg_number(R"([0-9]+)");
-    std::regex reg_letter(R"([a-zA-Z]+)");
+    std::regex reg_letter(R"([\w]+)");
 
     auto isLetter(char c)
      -> bool{
@@ -80,7 +80,7 @@ namespace Lexer{
     }
     auto isNumber(char c)
      -> bool{
-        
+
         std::string str({c});
         if(std::regex_match( str, reg_number)){
             return true;
@@ -319,6 +319,7 @@ namespace Perser{
             sync(1);   
             return true;
         }       
+
     }
 
     namespace speculate{
@@ -347,6 +348,22 @@ namespace Perser{
             return 0;
         }
     };
+
+
+    auto match(Token::Type type, int i)
+         -> bool{
+            Token  token =  Core::LT(i);     
+         
+            curString = token.getName();
+
+            Token::Type t = token.getType();
+            if(type == t){
+                Core::nextToken();
+                return true;
+            }else{
+                return false;
+            }
+    }
 
     auto match(Token::Type type)
          -> bool{
@@ -458,6 +475,9 @@ namespace Perser{
         std::vector< std::function<bool()>> Statement;
         std::vector< std::function<bool()>> RightValue;
         std::vector< std::function<bool()>> VariableDecl;
+
+        std::vector< std::function<bool()>> TestCore;
+
 
         auto setup()
          -> bool{
@@ -697,6 +717,39 @@ namespace Perser{
                     }
                 );
             }
+
+            {//TestCore
+                Statement.push_back(
+                    []{
+                        return match(VariableDecl);
+                    }
+                );
+                Statement.push_back(
+                    []{
+                        return match(IfStatement);
+                    }
+                );
+                Statement.push_back(
+                    []{
+                        return match(FIN);
+                    }
+                );
+                Statement.push_back(
+                    []{
+                        return match(FunctionDecl);
+                    }
+                );
+            }
+
+            {
+                TestCore.push_back(
+                    []{
+                        return match(FunctionDecl);
+                    }
+                );
+            }
+
+
             return true;
         }        
     }

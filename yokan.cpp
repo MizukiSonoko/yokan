@@ -241,6 +241,7 @@ namespace Perser{
     int buf_index = 0;
     std::stack<int>       markers;
     std::vector<Token> headTokens;
+    std::vector<Token> overHeadTokens;
     std::string         curString;
 
     std::map<std::string, int> variableTable;
@@ -259,6 +260,7 @@ namespace Perser{
 
         auto fill(int n)
          -> bool{
+
             for(int i = 0;i < n;i++){
                 headTokens.push_back(tokens.front());
                 tokens.pop_front();
@@ -279,6 +281,11 @@ namespace Perser{
          -> Token{        
             sync(i);
             return headTokens[buf_index+i-1];
+        }
+        
+        auto margin(int i)
+         -> Token{
+            return headTokens[buf_index+i-2];
         }
 
         auto mark()
@@ -350,15 +357,20 @@ namespace Perser{
     };
 
 
-    auto match(Token::Type type, int i)
+    auto match_2(Token::Type type_1,Token::Type type_2)
          -> bool{
-            Token  token =  Core::LT(i);     
-         
-            curString = token.getName();
+            Token  token_1 =  Core::LT(2);     
+            Token  token_2 =  Core::margin(2);     
+            /*
+            for(auto t : headTokens){
+                std::cout<<"2  headTokens:"<<t.getName()<<"\n";
+            }
+            */
+            curString = token_1.getName();
 
-            std::cout<<"["<<i<<"] curString:"<<curString<<"\n";
-            Token::Type t = token.getType();
-            if(type == t){
+            Token::Type t1 = token_1.getType();
+            Token::Type t2 = token_2.getType();
+            if(type_1 == t1 and type_2 == t2){
 //                Core::nextToken();
                 return true;
             }else{
@@ -369,9 +381,14 @@ namespace Perser{
     auto match(Token::Type type)
          -> bool{
             Token  token =  Core::LT(1);     
-         
+            /*         
+            std::cout<<"############\n";
+            for(auto t : headTokens){
+                std::cout<<"headTokens:"<<t.getName()<<"\n";
+            }
+            */
             curString = token.getName();
-            std::cout<<"curString:"<<curString<<"\n";
+            //std::cout<<"c:"<<curString<<"\n";
             Token::Type t = token.getType();
             if(type == t){
                 Core::nextToken();
@@ -530,6 +547,14 @@ namespace Perser{
             {//List
                 List.push_back(
                     []{
+                        log(1, "List: [ Identifire ]");
+                        return 
+                            match(Token::LBRACKET) &&
+                            match_2(Token::RBRACKET, Token::NAME);
+                    }
+                );
+                List.push_back(
+                    []{
                         log(1, "List: [ VariableDecl ]");
                         return 
                             match(Token::LBRACKET) &&                           
@@ -544,7 +569,7 @@ namespace Perser{
                             match(Token::LBRACKET) &&                           
                             match(Token::RBRACKET);
                     }
-                );                
+                );        
             }
 
             {//Operator
@@ -719,32 +744,7 @@ namespace Perser{
                 );
             }
 
-            {//TestCore
-                TestCore.push_back(
-                    []{
-                        return 
-                            match(Token::LBRACKET) &&
-                            match(Token::RBRACKET, 2) &&
-                            match(Identifire);
-                    }
-                );
-                TestCore.push_back(
-                    []{
-                        log(1, "List: [ VariableDecl ]");
-                        return 
-                            match(Token::LBRACKET) &&                           
-                            match(ListVariableDecl) &&
-                            match(Token::RBRACKET);
-                    }
-                );
-                TestCore.push_back(
-                    []{
-                        log(1, "List: [ ]");
-                        return 
-                            match(Token::LBRACKET) &&                           
-                            match(Token::RBRACKET);
-                    }
-                );                 
+            {//TestCore                 
             }
 
             return true;
@@ -764,7 +764,7 @@ namespace Perser{
             isFirst = false;
         }
         
-        return match(Rule::TestCore);
+        return match(Rule::Statement);
     }
 }
 

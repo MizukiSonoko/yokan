@@ -332,6 +332,7 @@ namespace Perser{
     namespace speculate{
         auto speculate(std::function<bool()> rule)
          -> bool{
+
             Core::mark();
             bool success = false;
             if(
@@ -348,6 +349,7 @@ namespace Perser{
             int case_num = 1;
             for(auto rule : rules){
                 if(speculate(rule)){
+                    log(3,"#speculate "+std::to_string(case_num));
                     return case_num;
                 }
                 case_num ++;
@@ -356,22 +358,15 @@ namespace Perser{
         }
     };
 
-
-    auto match_2(Token::Type type_1,Token::Type type_2)
+    auto match_2(Token::Type type)
          -> bool{
-            Token  token_1 =  Core::LT(2);     
-            Token  token_2 =  Core::margin(2);     
-            /*
-            for(auto t : headTokens){
-                std::cout<<"2  headTokens:"<<t.getName()<<"\n";
-            }
-            */
-            curString = token_1.getName();
+            Token  token =  Core::LT(2);     
 
-            Token::Type t1 = token_1.getType();
-            Token::Type t2 = token_2.getType();
-            if(type_1 == t1 and type_2 == t2){
-//                Core::nextToken();
+            curString = token.getName();
+            //std::cout<<"c:"<<curString<<"\n";
+            Token::Type t = token.getType();
+            if(type == t){
+                Core::nextToken();
                 return true;
             }else{
                 return false;
@@ -381,14 +376,8 @@ namespace Perser{
     auto match(Token::Type type)
          -> bool{
             Token  token =  Core::LT(1);     
-            /*         
-            std::cout<<"############\n";
-            for(auto t : headTokens){
-                std::cout<<"headTokens:"<<t.getName()<<"\n";
-            }
-            */
             curString = token.getName();
-            //std::cout<<"c:"<<curString<<"\n";
+
             Token::Type t = token.getType();
             if(type == t){
                 Core::nextToken();
@@ -548,9 +537,20 @@ namespace Perser{
                 List.push_back(
                     []{
                         log(1, "List: [ Identifire ]");
+                        bool val1 = match(Token::LBRACKET);
+
+                        bool val2 = match_2(Token::RBRACKET);
+
+                        bool val3 = match(Identifire);
+                        log(2, "List Resullt val1:"+std::to_string(val1)+" val1:"+std::to_string(val2)+" val3:"+std::to_string(val3));
+
+                        return val1 && val2 && val3;
+/*
                         return 
                             match(Token::LBRACKET) &&
-                            match_2(Token::RBRACKET, Token::NAME);
+                            match_2(Token::RBRACKET) &&
+                            match(Identifire);
+*/
                     }
                 );
                 List.push_back(
@@ -691,22 +691,38 @@ namespace Perser{
             {//Statement
                 Statement.push_back(
                     []{
-                        return match(VariableDecl);
+                        bool val = match(VariableDecl);
+                        log(2, "Statement:VariableDecl Resullt val:"+std::to_string(val));
+                        return val;
+
+//                        return match(VariableDecl);
                     }
                 );
                 Statement.push_back(
                     []{
-                        return match(IfStatement);
+                        bool val = match(IfStatement);
+                        log(2, "Statement:IfStatement Resullt val:"+std::to_string(val));
+                        return val;
+
+//                        return match(IfStatement);
                     }
                 );
                 Statement.push_back(
                     []{
-                        return match(FIN);
+
+                        bool val = match(FIN);
+                        log(2, "Statement:FIN Resullt val:"+std::to_string(val));
+                        return val;
+//                        return match(FIN);
                     }
                 );
                 Statement.push_back(
                     []{
-                        return match(FunctionDecl);
+
+                        bool val = match(FunctionDecl);
+                        log(2, "Statement:FunctionDecl Resullt val:"+std::to_string(val));
+                        return val;
+//                        return match(FunctionDecl);
                     }
                 );
             }
@@ -715,19 +731,33 @@ namespace Perser{
                 RightValue.push_back(
                     []{
                         log(2, "RightValue: BinaryExpr");
-                        return match(BinaryExpr);
+
+                        bool val = match(BinaryExpr);
+                        log(2, "RightValue:BinaryExpr val:"+std::to_string(val));
+                        return val;
+
+//                        return match(BinaryExpr);
                     }
                 );
                 RightValue.push_back(
                     []{
                         log(2, "RightValue: Identifire");
-                        return match(Identifire);
+                        bool val = match(Identifire);
+                        log(2, "RightValue:Identifire Resullt val:"+std::to_string(val));
+                        return val;
+
+//                        return match(Identifire);
                     }
                 );
                 RightValue.push_back(
                     []{
                         log(2, "RightValue: List");
-                        return match(List);
+
+                        bool val = match(List);
+                        log(2, "RightValue:List Resullt val:"+std::to_string(val));
+                        return val;
+
+//                        return match(List);
                     }
                 );
             }
@@ -735,16 +765,71 @@ namespace Perser{
             {//VariableDecl
                 VariableDecl.push_back(
                     []{
+                            bool val1 = match(Token::NAME); 
+                            bool val2 = match(Token::EQUAL);
+                            bool val3 = match(RightValue);
+                            bool val4;
+                            // match
+                            Token  token =  Core::LT(1);     
+                                        /*         
+                                        std::cout<<"############\n";
+                                        for(auto t : headTokens){
+                                            std::cout<<"headTokens:"<<t.getName()<<"\n";
+                                        }
+                                        */
+                                        curString = token.getName();
+                                        std::cout<<"c:"<<curString<<"\n";
+                                        
+                                        Token::Type t = token.getType();
+                                        if(Token::FIN == t){
+                                            Core::nextToken();
+                                            val4 = true;
+                                        }else{
+                                            val4 = false;
+                                        }
+                            // match
+//                          bool val4 = match(Token::FIN);
+
+                            log(2, "VariableDecl Resullt val1:"+std::to_string(val1)+" val1:"+std::to_string(val2)+" val3:"+std::to_string(val3)+" val4:"+std::to_string(val4));
+                            return val1 && val2 && val3 && val4;
+/*                          
                         return 
                             match(Token::NAME) &&
                             match(Token::EQUAL) && 
                             match(RightValue) &&
                             match(Token::FIN);
+*/
                     }
                 );
             }
 
-            {//TestCore                 
+            {//TestCore 
+                TestCore.push_back(
+                    []{
+                        log(1, "List: [ Identifire ]");
+                        return 
+                            match(Token::LBRACKET) &&
+                            match_2(Token::RBRACKET) &&
+                            match(Identifire);
+                    }
+                );
+                TestCore.push_back(
+                    []{
+                        log(1, "List: [ VariableDecl ]");
+                        return 
+                            match(Token::LBRACKET) &&                           
+                            match(ListVariableDecl) &&
+                            match(Token::RBRACKET);
+                    }
+                );
+                TestCore.push_back(
+                    []{
+                        log(1, "List: [ ]");
+                        return 
+                            match(Token::LBRACKET) &&                           
+                            match(Token::RBRACKET);
+                    }
+                );                        
             }
 
             return true;

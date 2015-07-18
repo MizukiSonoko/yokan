@@ -536,11 +536,9 @@ namespace Perser{
             {//List
                 List.push_back(
                     []{
-                        log(1, "List: [ Identifire ]");
+                        
                         bool val1 = match(Token::LBRACKET);
-
                         bool val2 = match_2(Token::RBRACKET);
-
                         bool val3 = match(Identifire);
                         log(2, "List Resullt val1:"+std::to_string(val1)+" val1:"+std::to_string(val2)+" val3:"+std::to_string(val3));
 
@@ -778,7 +776,6 @@ namespace Perser{
                                         }
                                         */
                                         curString = token.getName();
-                                        std::cout<<"c:"<<curString<<"\n";
                                         
                                         Token::Type t = token.getType();
                                         if(Token::FIN == t){

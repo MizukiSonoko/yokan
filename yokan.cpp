@@ -363,7 +363,6 @@ namespace Perser{
             Token  token =  Core::LT(2);     
 
             curString = token.getName();
-            //std::cout<<"c:"<<curString<<"\n";
             Token::Type t = token.getType();
             if(type == t){
                 Core::nextToken();
@@ -403,7 +402,7 @@ namespace Perser{
     } 
 
     auto match(std::vector< std::function<bool()>> rules)
-     -> int{
+     -> int{        
         int _result = speculate::speculate(rules);
         if(!_result){
             return 0;
@@ -536,7 +535,7 @@ namespace Perser{
             {//List
                 List.push_back(
                     []{
-                        
+
                         bool val1 = match(Token::LBRACKET);
                         bool val2 = match_2(Token::RBRACKET);
                         bool val3 = match(Identifire);
@@ -594,8 +593,9 @@ namespace Perser{
             }
 
             {//BinaryExpr
+
                 BinaryExpr.push_back(
-                    []{
+                     []{
                         return 
                             match(Identifire) &&
                             match(Operator) &&
@@ -603,7 +603,7 @@ namespace Perser{
                     }
                 );
                 BinaryExpr.push_back(
-                     []{
+                    []{
                         return 
                             match(Identifire) &&
                             match(Operator) &&
@@ -707,7 +707,6 @@ namespace Perser{
                 );
                 Statement.push_back(
                     []{
-
                         bool val = match(FIN);
                         log(2, "Statement:FIN Resullt val:"+std::to_string(val));
                         return val;
@@ -716,7 +715,6 @@ namespace Perser{
                 );
                 Statement.push_back(
                     []{
-
                         bool val = match(FunctionDecl);
                         log(2, "Statement:FunctionDecl Resullt val:"+std::to_string(val));
                         return val;
@@ -750,7 +748,6 @@ namespace Perser{
                 RightValue.push_back(
                     []{
                         log(2, "RightValue: List");
-
                         bool val = match(List);
                         log(2, "RightValue:List Resullt val:"+std::to_string(val));
                         return val;
@@ -776,7 +773,6 @@ namespace Perser{
                                         }
                                         */
                                         curString = token.getName();
-                                        
                                         Token::Type t = token.getType();
                                         if(Token::FIN == t){
                                             Core::nextToken();

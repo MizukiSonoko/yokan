@@ -237,12 +237,13 @@ namespace Lexer{
 namespace Perser{
 
     enum Type{
+        NONE,
+        OBJECT,
         INT,
         STRING,
         DOUBLE,
         LIST
     };
-
 
     bool isFirst = true;
 
@@ -254,6 +255,9 @@ namespace Perser{
 
     std::map<std::string, Type> variableTable;
     std::map<std::string, int> functionTable;
+
+    std::string cur_val_name;
+    Type        cur_type;
 
     void log(int layour, std::string msg){
     #ifdef DEBUG
@@ -694,13 +698,14 @@ namespace Perser{
             }
 
             {//Statement
+
                 Statement.push_back(
                     []{
                         bool val = match(VariableDecl);
                         log(2, "Statement:VariableDecl Resullt val:"+std::to_string(val));
                         return val;
 
-//                        return match(VariableDecl);
+                    //return match(VariableDecl);
                     }
                 );
                 Statement.push_back(
@@ -709,7 +714,7 @@ namespace Perser{
                         log(2, "Statement:IfStatement Resullt val:"+std::to_string(val));
                         return val;
 
-//                        return match(IfStatement);
+                    //  return match(IfStatement);
                     }
                 );
                 Statement.push_back(
@@ -717,7 +722,7 @@ namespace Perser{
                         bool val = match(FIN);
                         log(2, "Statement:FIN Resullt val:"+std::to_string(val));
                         return val;
-//                        return match(FIN);
+                        //  return match(FIN);
                     }
                 );
                 Statement.push_back(
@@ -725,80 +730,61 @@ namespace Perser{
                         bool val = match(FunctionDecl);
                         log(2, "Statement:FunctionDecl Resullt val:"+std::to_string(val));
                         return val;
-//                        return match(FunctionDecl);
+                        //  return match(FunctionDecl);
                     }
                 );
             }
 
             {//RightValue
                 RightValue.push_back(
-                    []{
+                    [&]{
                         log(2, "RightValue: BinaryExpr");
 
                         bool val = match(BinaryExpr);
                         log(2, "RightValue:BinaryExpr val:"+std::to_string(val));
+                        if(val){
+                            Perser::cur_type = Type::OBJECT;
+                        }
                         return val;
-
-//                        return match(BinaryExpr);
                     }
                 );
                 RightValue.push_back(
-                    []{
+                    [&]{
                         log(2, "RightValue: Identifire");
                         bool val = match(Identifire);
                         log(2, "RightValue:Identifire Resullt val:"+std::to_string(val));
+                        if(val){
+                            Perser::cur_type = Type::OBJECT;
+                        }
                         return val;
-
-//                        return match(Identifire);
                     }
                 );
                 RightValue.push_back(
-                    []{
+                    [&]{
                         log(2, "RightValue: List");
                         bool val = match(List);
                         log(2, "RightValue:List Resullt val:"+std::to_string(val));
+                        if(val){
+                            Perser::cur_type = Type::LIST;
+                        }
                         return val;
-
-//                        return match(List);
                     }
                 );
             }
 
             {//VariableDecl
                 VariableDecl.push_back(
-                    []{
-                            bool val1 = match(Token::NAME); 
+                    [&]{
+                            bool val1 = match(Token::NAME);
+                            Perser::cur_val_name = curString;
                             bool val2 = match(Token::EQUAL);
                             bool val3 = match(RightValue);
-                            bool val4;
-                            // match
-                            Token  token =  Core::LT(1);     
-                                        /*         
-                                        std::cout<<"############\n";
-                                        for(auto t : headTokens){
-                                            std::cout<<"headTokens:"<<t.getName()<<"\n";
-                                        }
-                                        */
-                                        curString = token.getName();
-                                        Token::Type t = token.getType();
-                                        if(Token::FIN == t){
-                                            Core::nextToken();
-                                            val4 = true;
-                                        }else{
-                                            val4 = false;
-                                        }
-                            // match
-//                          bool val4 = match(Token::FIN);
+                            bool val4 = match(Token::FIN);
+
+                            variableTable.insert({cur_val_name,Perser::cur_type});
 
                             log(2, "VariableDecl Resullt val1:"+std::to_string(val1)+" val1:"+std::to_string(val2)+" val3:"+std::to_string(val3)+" val4:"+std::to_string(val4));
                             return val1 && val2 && val3 && val4;
-/*                          
-                        return 
-                            match(Token::NAME) &&
-                            match(Token::EQUAL) && 
-                            match(RightValue) &&
-                            match(Token::FIN);
-*/
                     }
                 );
             }
@@ -849,7 +835,23 @@ namespace Perser{
             isFirst = false;
         }
         
-        return match(Rule::Statement);
+        cur_type = Type::NONE;
+
+        int result = match(Rule::Statement);
+
+        auto it = variableTable.begin();
+        while(it != variableTable.end()){
+            std::cout << "valname:" << it->first << " type:" << it->second <<"\n";
+            it++;
+        }
+/*
+        OBJECT,
+        INT,
+        STRING,
+        DOUBLE,
+        LIST
+*/
+        return result;
     }
 }
 

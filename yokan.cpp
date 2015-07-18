@@ -236,6 +236,14 @@ namespace Lexer{
 
 namespace Perser{
 
+    enum Type{
+        INT,
+        STRING,
+        DOUBLE,
+        LIST
+    };
+
+
     bool isFirst = true;
 
     int buf_index = 0;
@@ -244,7 +252,7 @@ namespace Perser{
     std::vector<Token> overHeadTokens;
     std::string         curString;
 
-    std::map<std::string, int> variableTable;
+    std::map<std::string, Type> variableTable;
     std::map<std::string, int> functionTable;
 
     void log(int layour, std::string msg){
@@ -483,7 +491,6 @@ namespace Perser{
         std::vector< std::function<bool()>> VariableDecl;
 
         std::vector< std::function<bool()>> TestCore;
-
 
         auto setup()
          -> bool{

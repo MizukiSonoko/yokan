@@ -17,6 +17,7 @@
 #include <chrono>
 #include <iomanip>
 
+
 class Token{
   public:
     enum Type{
@@ -370,20 +371,6 @@ namespace Perser{
         }
     };
 
-    auto match_2(Token::Type type)
-         -> bool{
-            Token  token =  Core::LT(2);     
-
-            curString = token.getName();
-            Token::Type t = token.getType();
-            if(type == t){
-                Core::nextToken();
-                return true;
-            }else{
-                return false;
-            }
-    }
-
     auto match(Token::Type type)
          -> bool{
             Token  token =  Core::LT(1);     
@@ -436,32 +423,38 @@ namespace Perser{
 
         };
 
-        class FunctionVariableDeclAST : public AST{
+        class ListAST : public AST{
 
         };
+        class OperatorAST : public AST{
 
+        };
+        class BinaryExprAST : public AST{
+
+        };
+        class IdentifireAST : public AST{
+
+        };
+        class ListVariableDeclAST : public AST{
+
+        };
         class FunctionDeclAST : public AST{
 
         };
-
         class ConditionExprAST : public AST{
 
-        };     
-
+        };
         class IfStatementAST : public AST{
 
-        };     
+        };
+        class StatementAST : public AST{
 
-        class BinaryExprAST : public AST{
+        };
+        class RightValueAST : public AST{
 
-        };            
-
+        };
         class VariableDeclAST : public AST{
 
-        };            
-     
-        class StatementAST : public AST{
-            public:
         };
 
         class TranslationAST : public AST{
@@ -548,17 +541,11 @@ namespace Perser{
                     []{
 
                         bool val1 = match(Token::LBRACKET);
-                        bool val2 = match_2(Token::RBRACKET);
-                        bool val3 = match(Identifire);
+                        bool val2 = match(Identifire);
+                        bool val3 = match(Token::RBRACKET);
                         log(2, "List Resullt val1:"+std::to_string(val1)+" val1:"+std::to_string(val2)+" val3:"+std::to_string(val3));
 
                         return val1 && val2 && val3;
-/*
-                        return 
-                            match(Token::LBRACKET) &&
-                            match_2(Token::RBRACKET) &&
-                            match(Identifire);
-*/
                     }
                 );
                 List.push_back(
@@ -795,8 +782,8 @@ namespace Perser{
                         log(1, "List: [ Identifire ]");
                         return 
                             match(Token::LBRACKET) &&
-                            match_2(Token::RBRACKET) &&
-                            match(Identifire);
+                            match(Identifire) &&
+                            match(Token::RBRACKET);
                     }
                 );
                 TestCore.push_back(

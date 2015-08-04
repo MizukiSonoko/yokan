@@ -437,7 +437,20 @@ namespace Perser{
             VariableDeclID
         };
 
-        
+        class FINAST;
+        template<typename T> class NumberAST;
+        class ListAST;
+        class OperatorAST;
+        class BinaryExprAST;
+        class IdentifireAST;
+        class ListVariableDeclAST;
+        class FunctionDeclAST;
+        class ConditionExprAST;
+        class IfStatementAST;
+        class StatementAST;
+        class RightValueAST;
+        class VariableDeclAST;
+
         class AST{
                 AstID ID;
             public:
@@ -447,6 +460,7 @@ namespace Perser{
                     return ID;
                 }
         };
+
 
         class FINAST : public AST{
             public:
@@ -476,77 +490,6 @@ namespace Perser{
                     return ast->getID() == NumberID;
                 }
         };
-
-        class IdentifireAST : public AST{
-                NumberAST<int>   numberIntAST;
-                NumberAST<float>   numberFloatAST;
-            public:
-                IdentifireAST(int value)  : numberIntAST(value), numberFloatAST(-1.0f), AST(IdentifireID){}
-                IdentifireAST(float value): numberIntAST(-1), numberFloatAST(value), AST(IdentifireID){}
-
-                NumberAST<int> getIntAST(){
-                    return numberIntAST;
-                }
-                NumberAST<float> getFloatAST(){
-                    return numberFloatAST;
-                }
-
-                static inline bool classof(IdentifireAST const*){
-                    return true;
-                }
-                static inline bool classof(AST const* ast){
-                    return ast->getID() == IdentifireID;
-                }       
-        };   
-
-        class RightValueAST : public AST{
-
-        };
-
-        class ListVariableDeclAST : public AST{
-                std::vector<RightValueAST*> rightValueASTs;
-                std::vector<ListVariableDeclAST*> listVariableDecls;
-            public:
-                ListVariableDeclAST() : AST(ListVariableDeclID) {}
-                ~ListVariableDeclAST(){
-                    for(RightValueAST* element : rightValueASTs){
-                        RELEASE(element);
-                    }
-                    rightValueASTs.clear();
-
-                    for(ListVariableDeclAST* element : listVariableDecls){
-                        RELEASE(element);
-                    }
-                    listVariableDecls.clear();                    
-                } 
-                void addListVariableDecl(ListVariableDeclAST *listVariableDecl){
-                    listVariableDecls.push_back( listVariableDecl );
-                }
-                void addRightValueAST(RightValueAST *rightValueAST){
-                    rightValueASTs.push_back( rightValueAST );
-                }
-                ListVariableDeclAST* getListVariableDecl(int p){
-                    if( p > listVariableDecls.size()){
-                        return nullptr;
-                    }else{
-                        return listVariableDecls.at( p );
-                    }
-                }
-                RightValueAST* getRightValueASTAST(int p){
-                    if( p > rightValueASTs.size()){
-                        return nullptr;
-                    }else{
-                        return rightValueASTs.at( p );
-                    }
-                }
-                unsigned int getListVariableDeclSize(){
-                    return listVariableDecls.size();
-                }
-                unsigned int getRightValueASTSize(){
-                    return rightValueASTs.size();
-                }
-
-        };
         
         class ListAST : public AST{
                 std::vector<IdentifireAST*> identifireASTs;
@@ -555,6 +498,7 @@ namespace Perser{
                 ListAST() : AST(ListID) {}
                 ~ListAST(){
                     for(IdentifireAST* element : identifireASTs){
+                        //destructor may not get called....
                         RELEASE(element);
                     }
                     listVariableDecls.clear();
@@ -594,9 +538,79 @@ namespace Perser{
         class OperatorAST : public AST{
 
         };
+
         class BinaryExprAST : public AST{
 
-        };               
+        }; 
+
+        class IdentifireAST : public AST{
+                NumberAST<int>   numberIntAST;
+                NumberAST<float>   numberFloatAST;
+            public:
+                IdentifireAST(int value)  : numberIntAST(value), numberFloatAST(-1.0f), AST(IdentifireID){}
+                IdentifireAST(float value): numberIntAST(-1), numberFloatAST(value), AST(IdentifireID){}
+                ~IdentifireAST(){}
+
+                NumberAST<int> getIntAST(){
+                    return numberIntAST;
+                }
+                NumberAST<float> getFloatAST(){
+                    return numberFloatAST;
+                }
+
+                static inline bool classof(IdentifireAST const*){
+                    return true;
+                }
+                static inline bool classof(AST const* ast){
+                    return ast->getID() == IdentifireID;
+                }       
+        };            
+
+        class ListVariableDeclAST : public AST{
+                std::vector<RightValueAST*> rightValueASTs;
+                std::vector<ListVariableDeclAST*> listVariableDecls;
+            public:
+                ListVariableDeclAST() : AST(ListVariableDeclID) {}
+                ~ListVariableDeclAST(){
+                    for(RightValueAST* element : rightValueASTs){
+                        //destructor may not get called...
+                        RELEASE(element);
+                    }
+                    rightValueASTs.clear();
+
+                    for(ListVariableDeclAST* element : listVariableDecls){
+                        RELEASE(element);
+                    }
+                    listVariableDecls.clear();                    
+                } 
+                void addListVariableDecl(ListVariableDeclAST *listVariableDecl){
+                    listVariableDecls.push_back( listVariableDecl );
+                }
+                void addRightValueAST(RightValueAST *rightValueAST){
+                    rightValueASTs.push_back( rightValueAST );
+                }
+                ListVariableDeclAST* getListVariableDecl(int p){
+                    if( p > listVariableDecls.size()){
+                        return nullptr;
+                    }else{
+                        return listVariableDecls.at( p );
+                    }
+                }
+                RightValueAST* getRightValueASTAST(int p){
+                    if( p > rightValueASTs.size()){
+                        return nullptr;
+                    }else{
+                        return rightValueASTs.at( p );
+                    }
+                }
+                unsigned int getListVariableDeclSize(){
+                    return listVariableDecls.size();
+                }
+                unsigned int getRightValueASTSize(){
+                    return rightValueASTs.size();
+                }
+        };
+
         class FunctionDeclAST : public AST{
 
         };
@@ -612,7 +626,13 @@ namespace Perser{
         class VariableDeclAST : public AST{
 
         };
-
+        class RightValueAST : public AST{
+                BinaryExprAST* binaryExpr;
+                IdentifireAST* identifireAST;
+                ListAST*       listAST;
+            public:
+                ~RightValueAST();
+        };
         class TranslationAST : public AST{
             public:    
                 // * TODO 積極的にsetter gettterにしていこうな
@@ -882,7 +902,6 @@ namespace Perser{
                 RightValue.push_back(
                     [&]{
                         log(2, "RightValue: BinaryExpr");
-
                         bool val = match(BinaryExpr);
                         log(2, "RightValue:BinaryExpr val:"+std::to_string(val));
                         if(val){

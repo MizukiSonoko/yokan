@@ -17,6 +17,8 @@
 #include <chrono>
 #include <iomanip>
 
+#define RELEASE(x) {delete x;x=NULL;}
+#define RELEASEA(x) {delete[] x;x=NULL;}
 
 class Token{
   public:
@@ -474,24 +476,62 @@ namespace Perser{
                 }
         };
 
+        class IdentifireAST : public AST{
 
+        };
+
+        class ListVariableDeclAST : public AST{
+
+        };
+        
         class ListAST : public AST{
-
-
-
+                std::vector<IdentifireAST*> identifireASTs;
+                std::vector<ListVariableDeclAST*> listVariableDecls;
+            public:
+                ListAST() : AST(ListID) {}
+                ~ListAST(){
+                    for(IdentifireAST* element : identifireASTs){
+                        RELEASE(element);
+                    }
+                    listVariableDecls.clear();
+                    for(ListVariableDeclAST* element : listVariableDecls){
+                        RELEASE(element);
+                    }
+                    listVariableDecls.clear();                    
+                } 
+                void addListVariableDecl(ListVariableDeclAST *listVariableDecl){
+                    listVariableDecls.push_back( listVariableDecl );
+                }
+                void addIdentifireAST(IdentifireAST *identifireAST){
+                    identifireASTs.push_back( identifireAST );
+                }
+                ListVariableDeclAST* getListVariableDecl(int p){
+                    if( p > listVariableDecls.size()){
+                        return nullptr;
+                    }else{
+                        return listVariableDecls.at( p );
+                    }
+                }
+                IdentifireAST* getIdentifireAST(int p){
+                    if( p > identifireASTs.size()){
+                        return nullptr;
+                    }else{
+                        return identifireASTs.at( p );
+                    }
+                }
+                unsigned int getListVariableDeclSize(){
+                    return listVariableDecls.size();
+                }
+                unsigned int getIdentifireASTSize(){
+                    return identifireASTs.size();
+                }
         };
         class OperatorAST : public AST{
 
         };
         class BinaryExprAST : public AST{
 
-        };
-        class IdentifireAST : public AST{
-
-        };
-        class ListVariableDeclAST : public AST{
-
-        };
+        };               
         class FunctionDeclAST : public AST{
 
         };

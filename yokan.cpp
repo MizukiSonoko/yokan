@@ -419,8 +419,48 @@ namespace Perser{
     }
 
     namespace AST{
-        class AST{
+        enum AstID{
+            FINID,
+            NumberID,
+            ListID,
+            OperatorID,
+            BinaryExprID,
+            IdentifireID,
+            ListVariableDeclID,
+            FunctionDeclID,
+            ConditionExprID,
+            IfStatementID,
+            StatementID,
+            RightValueID,
+            VariableDeclID
+        };
 
+        class AST{
+                AstID ID;
+            public:
+                AST(AstID id) : ID(id){}
+                virtual ~AST(){}
+                AstID getID() const {
+                    return ID;
+                }
+        };
+
+        template<typename T> class NumberAST : public AST{
+                T value;
+            public:
+                NumberAST(T _value) : AST(NumberID), value(_value){};
+                ~NumberAST(){}
+
+                T getValue(){
+                    return value;
+                }
+                
+                static inline bool classof(NumberAST const*){
+                    return true;
+                }
+                static inline bool classof(AST const* ast){
+                    return ast->getID() == NumberID;
+                }
         };
 
         class ListAST : public AST{

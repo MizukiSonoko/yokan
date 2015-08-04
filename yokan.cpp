@@ -499,7 +499,52 @@ namespace Perser{
                 }       
         };   
 
+        class RightValueAST : public AST{
+
+        };
+
         class ListVariableDeclAST : public AST{
+                std::vector<RightValueAST*> rightValueASTs;
+                std::vector<ListVariableDeclAST*> listVariableDecls;
+            public:
+                ListVariableDeclAST() : AST(ListVariableDeclID) {}
+                ~ListVariableDeclAST(){
+                    for(RightValueAST* element : rightValueASTs){
+                        RELEASE(element);
+                    }
+                    rightValueASTs.clear();
+
+                    for(ListVariableDeclAST* element : listVariableDecls){
+                        RELEASE(element);
+                    }
+                    listVariableDecls.clear();                    
+                } 
+                void addListVariableDecl(ListVariableDeclAST *listVariableDecl){
+                    listVariableDecls.push_back( listVariableDecl );
+                }
+                void addRightValueAST(RightValueAST *rightValueAST){
+                    rightValueASTs.push_back( rightValueAST );
+                }
+                ListVariableDeclAST* getListVariableDecl(int p){
+                    if( p > listVariableDecls.size()){
+                        return nullptr;
+                    }else{
+                        return listVariableDecls.at( p );
+                    }
+                }
+                RightValueAST* getRightValueASTAST(int p){
+                    if( p > rightValueASTs.size()){
+                        return nullptr;
+                    }else{
+                        return rightValueASTs.at( p );
+                    }
+                }
+                unsigned int getListVariableDeclSize(){
+                    return listVariableDecls.size();
+                }
+                unsigned int getRightValueASTSize(){
+                    return rightValueASTs.size();
+                }
 
         };
         
@@ -562,9 +607,6 @@ namespace Perser{
 
         };
         class StatementAST : public AST{
-
-        };
-        class RightValueAST : public AST{
 
         };
         class VariableDeclAST : public AST{

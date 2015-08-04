@@ -445,6 +445,17 @@ namespace Perser{
                 }
         };
 
+        class FINAST : public AST{
+            public:
+                FINAST() : AST(FINID){};
+                static inline bool classof(FINAST const*){
+                    return true;
+                }
+                static inline bool classof(AST const* ast){
+                    return ast->getID() == FINID;
+                }
+        };
+
         template<typename T> class NumberAST : public AST{
                 T value;
             public:
@@ -463,7 +474,10 @@ namespace Perser{
                 }
         };
 
+
         class ListAST : public AST{
+
+
 
         };
         class OperatorAST : public AST{

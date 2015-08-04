@@ -437,6 +437,7 @@ namespace Perser{
             VariableDeclID
         };
 
+        
         class AST{
                 AstID ID;
             public:
@@ -477,8 +478,26 @@ namespace Perser{
         };
 
         class IdentifireAST : public AST{
+                NumberAST<int>   numberIntAST;
+                NumberAST<float>   numberFloatAST;
+            public:
+                IdentifireAST(int value)  : numberIntAST(value), numberFloatAST(-1.0f), AST(IdentifireID){}
+                IdentifireAST(float value): numberIntAST(-1), numberFloatAST(value), AST(IdentifireID){}
 
-        };
+                NumberAST<int> getIntAST(){
+                    return numberIntAST;
+                }
+                NumberAST<float> getFloatAST(){
+                    return numberFloatAST;
+                }
+
+                static inline bool classof(IdentifireAST const*){
+                    return true;
+                }
+                static inline bool classof(AST const* ast){
+                    return ast->getID() == IdentifireID;
+                }       
+        };   
 
         class ListVariableDeclAST : public AST{
 
@@ -526,6 +545,7 @@ namespace Perser{
                     return identifireASTs.size();
                 }
         };
+
         class OperatorAST : public AST{
 
         };

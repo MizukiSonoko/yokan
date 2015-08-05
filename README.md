@@ -8,12 +8,12 @@ Yokan is a thick, jellied dessert made of red bean paste, agar, and sugar. It is
 ## Description
  This is simple compiler.
 
-## Install
+## Setup
 
 ```bash
  $ https://github.com/MizukiSonoko/yokan
  $ cd yokan
- $ clang++ -Std=c++0x yokan.cpp -o yokan
+ $ make
  ```
 
 ## Usage

@@ -237,7 +237,7 @@ namespace Lexer{
     }
 };
 
-namespace Perser{
+namespace parser{
 
     enum Type{
         NONE,
@@ -573,7 +573,7 @@ namespace Perser{
                 ListVariableDeclAST() : AST(ListVariableDeclID) {}
                 ~ListVariableDeclAST(){
                     for(RightValueAST* element : rightValueASTs){
-                        //destructor may not get called...
+                        // destructor may not get called...
                         RELEASE(element);
                     }
                     rightValueASTs.clear();
@@ -905,7 +905,7 @@ namespace Perser{
                         bool val = match(BinaryExpr);
                         log(2, "RightValue:BinaryExpr val:"+std::to_string(val));
                         if(val){
-                            Perser::cur_type = Type::OBJECT;
+                            parser::cur_type = Type::OBJECT;
                         }
                         return val;
                     }
@@ -916,7 +916,7 @@ namespace Perser{
                         bool val = match(Identifire);
                         log(2, "RightValue:Identifire Resullt val:"+std::to_string(val));
                         if(val){
-                            Perser::cur_type = Type::OBJECT;
+                            parser::cur_type = Type::OBJECT;
                         }
                         return val;
                     }
@@ -927,7 +927,7 @@ namespace Perser{
                         bool val = match(List);
                         log(2, "RightValue:List Resullt val:"+std::to_string(val));
                         if(val){
-                            Perser::cur_type = Type::LIST;
+                            parser::cur_type = Type::LIST;
                         }
                         return val;
                     }
@@ -938,12 +938,12 @@ namespace Perser{
                 VariableDecl.push_back(
                     [&]{
                             bool val1 = match(Token::NAME);
-                            Perser::cur_val_name = curString;
+                            parser::cur_val_name = curString;
                             bool val2 = match(Token::EQUAL);
                             bool val3 = match(RightValue);
                             bool val4 = match(Token::FIN);
 
-                            variableTable.insert({cur_val_name,Perser::cur_type});
+                            variableTable.insert({cur_val_name,parser::cur_type});
 
                             log(2, "VariableDecl Resullt val1:"+std::to_string(val1)+" val1:"+std::to_string(val2)+" val3:"+std::to_string(val3)+" val4:"+std::to_string(val4));
                             return val1 && val2 && val3 && val4;
@@ -984,7 +984,7 @@ namespace Perser{
         }        
     }
 
-    auto perser()
+    auto parser()
      -> int{
         buf_index = 0;
         while(markers.size()!=0){
@@ -1037,7 +1037,7 @@ int main(int argc, char* argv[]){
             std::cout <<"\""<< t.getName() <<"\"  "<< t.getType() << "\n";
         }
 
-        auto result = Perser::perser();
+        auto result = parser::parser();
         auto eTime = std::chrono::system_clock::now();
         auto timeSpan = eTime - sTime;
         std::cout<< "Time:"<<std::setw(6)<< std::chrono::duration_cast<std::chrono::milliseconds>(timeSpan).count() <<"[ms]\n";
@@ -1064,7 +1064,7 @@ int main(int argc, char* argv[]){
         for(auto t : tokens){
             std::cout <<"\""<< t.getName() <<"\"  "<< t.getType() << "\n";
         }
-        int result = Perser::perser();
+        int result = parser::parser();
         auto eTime = std::chrono::system_clock::now();
         auto timeSpan = eTime - sTime;
         std::cout<< "Time: "<<std::setw(6)<< std::chrono::duration_cast<std::chrono::milliseconds>(timeSpan).count() <<"[ms]\n";

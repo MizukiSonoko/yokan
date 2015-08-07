@@ -289,7 +289,7 @@ namespace parser{
 
         class AST{
 
-                std::map<std::string, AST*> subAST;
+                std::map<AstID, AST*> subAST;
                 AstID type;
                 std::string value;
 
@@ -307,9 +307,9 @@ namespace parser{
                         delete it->second;
                     } 
                 }
-                auto add(std::string s, AST* obj)
+                auto add(AstID type, AST* obj)
                  -> AST*{
-                    this->subAST[s] = obj;
+                    this->subAST[type] = obj;
                     return this;
                 }
                 auto print() 
@@ -569,8 +569,8 @@ namespace parser{
                             auto _rightValue = match(RightValue);
                             auto _listVaariableDecl = match(ListVariableDecl);
                             return (new AST::AST(AST::ListVariableDeclID))
-                                ->add("RightValue", _rightValue)
-                                ->add("ListVariableDecl", _listVaariableDecl);
+                                ->add(AST::RightValueID, _rightValue)
+                                ->add(AST::ListVariableDeclID, _listVaariableDecl);
                         }
                     }
                 );
@@ -584,16 +584,16 @@ namespace parser{
                             }
                         }else{
                             return (new AST::AST(AST::ListVariableDeclID))
-                                ->add("RightValue",match(RightValue));
+                                ->add(AST::RightValueID, match(RightValue));
                         }
                     }
                 );
             }
 
+/*
             {//List
                 List.push_back(
                     []{
-
                         bool val1 = match(Token::LBRACKET);
                         bool val2 = match(Identifire);
                         bool val3 = match(Token::RBRACKET);
@@ -620,7 +620,7 @@ namespace parser{
                     }
                 );        
             }
-/*
+
             {//Operator
                 Operator.push_back(
                     []{
@@ -676,7 +676,7 @@ namespace parser{
                         }else{
                             AST::AST* _number = match(Number);
                             return (new AST::AST(AST::IdentifireID))
-                                ->add("Number", _number);
+                                ->add(AST::NumberID, _number);
                         }
                     }
                 );
@@ -865,7 +865,7 @@ namespace parser{
                             AST::AST* _identifire = match(Identifire);
                             match(Token::LBRACKET);
                             return (new AST::AST(AST::AstID::ListID))
-                                ->add("IdentifireID", _identifire);
+                                ->add(AST::IdentifireID, _identifire);
                         }
                     }
                 );            

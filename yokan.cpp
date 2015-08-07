@@ -488,7 +488,6 @@ namespace parser{
         std::vector< std::function<AST::AST*(bool)>> BinaryExpr;
         std::vector< std::function<AST::AST*(bool)>> Identifire;
         std::vector< std::function<AST::AST*(bool)>> ListVariableDecl;
-        std::vector< std::function<AST::AST*(bool)>> FunctionDecl;
         std::vector< std::function<AST::AST*(bool)>> ConditionExpr;
         std::vector< std::function<AST::AST*(bool)>> IfStatement;
         std::vector< std::function<AST::AST*(bool)>> Statement;
@@ -695,7 +694,6 @@ namespace parser{
             }
 
             {//BinaryExpr
-
                 BinaryExpr.push_back(
                     [](bool isSpec) -> AST::AST*{
                         if(isSpec){
@@ -772,35 +770,8 @@ namespace parser{
                     }
                 );
             }
-/*
-            {//FunctionDecl
-                FunctionDecl.push_back(
-                    []{
-                        return 
-                            match(Token::NAME,"def") &&
-                            match(Token::NAME) &&
-                            match(Token::LPARENT) &&
-                            match(ListVariableDecl) &&
-                            match(Token::RPARENT) &&
-                            match(Token::COLON) &&
-                            match(Token::FIN)
-                            ? 2 : 0;
-                    }
-                );
-                FunctionDecl.push_back(
-                    []{
-                        return 
-                            match(Token::NAME,"def") &&
-                            match(Token::NAME) &&
-                            match(Token::LPARENT) &&
-                            match(Token::RPARENT) &&
-                            match(Token::COLON) &&
-                            match(Token::FIN) 
-                            ? 2 : 0;
-                    } 
-                );
-            }
 
+/*
             {//ConditionExpr
                 ConditionExpr.push_back(
                     []{

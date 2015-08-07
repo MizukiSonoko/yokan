@@ -461,7 +461,6 @@ namespace parser{
                 }
         };
 
-
         class FINAST : public AST{
             public:
                 FINAST() : AST(FINID){};
@@ -536,7 +535,20 @@ namespace parser{
         };
 
         class OperatorAST : public AST{
-
+                std::string ope;
+            public:
+                OperatorAST(std::string _ope) : ope(_ope), AST(OperatorAST{}   
+                
+                std::string getValue(){
+                    return value;
+                }
+                
+                static inline bool classof(OperatorAST const*){
+                    return true;
+                }
+                static inline bool classof(AST const* ast){
+                    return ast->getID() == OperatorID;
+                }             
         };
 
         class BinaryExprAST : public AST{
@@ -633,6 +645,7 @@ namespace parser{
             public:
                 ~RightValueAST();
         };
+
         class TranslationAST : public AST{
             public:    
                 // * TODO 積極的にsetter gettterにしていこうな

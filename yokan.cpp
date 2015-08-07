@@ -460,13 +460,13 @@ namespace parser{
     } 
 
     auto match(std::vector< std::function<AST::AST*(bool)>> rules)
-     -> int{        
+     -> AST::AST* {        
         int _result = speculate::speculate(rules);
         if(!_result){
-            return 0;
+            return nullptr;
         }
-        rules[ _result-1 ](false);
-        return _result;
+        return rules[ _result-1 ](false);
+        ;
     }
 
     auto defVariable(std::string val_name)
@@ -807,7 +807,7 @@ namespace parser{
     }
 
     auto parser()
-     -> int{
+     -> AST::AST*{
         buf_index = 0;
         while(markers.size()!=0){
             markers.pop();
@@ -821,7 +821,7 @@ namespace parser{
         
         cur_type = Type::NONE;
 
-        int result = match(Rule::TestCore);
+        AST::AST* result = match(Rule::TestCore);
 
         auto it = variableTable.begin();
         while(it != variableTable.end()){
@@ -875,7 +875,6 @@ int main(int argc, char* argv[]){
 
 	std::string line;
     std::string term = ">>> ";
-    bool nest = false;
 	while(true){
 		std::cout<<term;
 		std::getline(std::cin, line);
@@ -886,25 +885,14 @@ int main(int argc, char* argv[]){
         for(auto t : tokens){
             std::cout <<"\""<< t.getName() <<"\"  "<< t.getType() << "\n";
         }
-        int result = parser::parser();
+        parser::AST::AST* result = parser::parser();
         auto eTime = std::chrono::system_clock::now();
         auto timeSpan = eTime - sTime;
         std::cout<< "Time: "<<std::setw(6)<< std::chrono::duration_cast<std::chrono::milliseconds>(timeSpan).count() <<"[ms]\n";
         
-        if(!result){
+        if(result == nullptr){
             std::cout<<"Syntax error! \n";
         }        
-        if(result==3 && nest){
-            term = "... ";
-            continue;
-        }
-        if(result==2 || result == 4 ){
-            term = "... ";
-            nest = true;
-        }else{
-            term = ">>> ";
-            nest = false;
-        }
         tokens.clear();
 	}
 	return 0;

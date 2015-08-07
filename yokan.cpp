@@ -439,8 +439,14 @@ namespace parser{
                 std::map<std::string, AST*> subAST;
                 AstID type;
                 std::string value;
+
+                /* Using only speculate.*/
+                bool isCorrect;
             public:
+                AST(bool isC):isCorrect(isC){}:
+
                 AST():type(FINID),value("<FIN>"){};
+                AST(AstID type):type(type){};
                 AST(AstID type,std::string value):type(type),value(value){};
                 ~AST(){
                     for(auto it = subAST.begin(); it != subAST.end(); it++){ 
@@ -464,7 +470,6 @@ namespace parser{
                     std::cout<<"\n";
                 }
         };
-
     };
 
     namespace Rule{
@@ -773,31 +778,21 @@ namespace parser{
 
             {//TestCore 
                 TestCore.push_back(
-                    []{
-                        log(1, "List: [ Identifire ]");
-                        return 
-                            match(Token::LBRACKET) &&
-                            match(Identifire) &&
-                            match(Token::RBRACKET);
+                    [](bool isSpec){
+                        if(isSpec){
+                                if( match(Token::LBRACKET) &&
+                                    match(Token::RBRACKET)){
+                                    return new AST(true);
+                                }else{
+                                    return new AST(false);
+                                }
+                        }else{
+                            bool val = match(Token::LBRACKET);
+                            bool val = match(Token::LBRACKET);
+                            return new AST(AST::AstID::ListID);
+                        }
                     }
-                );
-                TestCore.push_back(
-                    []{
-                        log(1, "List: [ VariableDecl ]");
-                        return 
-                            match(Token::LBRACKET) &&                           
-                            match(ListVariableDecl) &&
-                            match(Token::RBRACKET);
-                    }
-                );
-                TestCore.push_back(
-                    []{
-                        log(1, "List: [ ]");
-                        return 
-                            match(Token::LBRACKET) &&                           
-                            match(Token::RBRACKET);
-                    }
-                );                        
+                );            
             }
 
             return true;
@@ -819,7 +814,7 @@ namespace parser{
         
         cur_type = Type::NONE;
 
-        int result = match(Rule::Statement);
+        int result = match(Rule::TestCore;
 
         auto it = variableTable.begin();
         while(it != variableTable.end()){

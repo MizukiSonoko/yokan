@@ -647,30 +647,53 @@ namespace parser{
                 );        
             }
 
-/*
             {//Operator
                 Operator.push_back(
-                    []{
-                        return match(Token::OPE_ADD);
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            return match(Token::OPE_ADD) ?
+                                new AST::AST(true) :
+                                new AST::AST(false);                                    
+                        }else{
+                            return new AST::AST(AST::OperatorID,"+");
+                        }
                     }
                 );
                 Operator.push_back(
-                    []{
-                        return match(Token::OPE_SUB);
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            return match(Token::OPE_SUB) ?
+                                new AST::AST(true) :
+                                new AST::AST(false);                                    
+                        }else{
+                            return new AST::AST(AST::OperatorID,"-");
+                        }
                     }
                 );
                 Operator.push_back(
-                    []{
-                        return match(Token::OPE_DIV);
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            return match(Token::OPE_MUL) ?
+                                new AST::AST(true) :
+                                new AST::AST(false);                                    
+                        }else{
+                            return new AST::AST(AST::OperatorID,"*");
+                        }
                     }
                 );
                 Operator.push_back(
-                    []{
-                        return match(Token::OPE_MUL);
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            return match(Token::OPE_DIV) ?
+                                new AST::AST(true) :
+                                new AST::AST(false);                                    
+                        }else{
+                            return new AST::AST(AST::OperatorID,"/");
+                        }
                     }
                 );
             }
-
+/*
             {//BinaryExpr
 
                 BinaryExpr.push_back(

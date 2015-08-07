@@ -804,18 +804,23 @@ namespace parser{
                     }
                 );
             }
-
+*/
             {//Statement
 
                 Statement.push_back(
-                    []{
-                        bool val = match(VariableDecl);
-                        log(2, "Statement:VariableDecl Resullt val:"+std::to_string(val));
-                        return val;
-
-                    //return match(VariableDecl);
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            return match(VariableDecl) ?
+                                new AST::AST(true) :
+                                new AST::AST(false);
+                        }else{
+                            auto _variableDecl = match(VariableDecl);
+                            return (new AST::AST(AST::StatementID))
+                                ->add(AST::VariableDeclID, _variableDecl);
+                        }
                     }
                 );
+                /*
                 Statement.push_back(
                     []{
                         bool val = match(IfStatement);
@@ -825,24 +830,22 @@ namespace parser{
                     //  return match(IfStatement);
                     }
                 );
+                */
                 Statement.push_back(
-                    []{
-                        bool val = match(FIN);
-                        log(2, "Statement:FIN Resullt val:"+std::to_string(val));
-                        return val;
-                        //  return match(FIN);
-                    }
-                );
-                Statement.push_back(
-                    []{
-                        bool val = match(FunctionDecl);
-                        log(2, "Statement:FunctionDecl Resullt val:"+std::to_string(val));
-                        return val;
-                        //  return match(FunctionDecl);
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            return match(FIN) ?
+                                new AST::AST(true) :
+                                new AST::AST(false);
+                        }else{
+                            match(FIN);
+                            return (new AST::AST(AST::StatementID))
+                                ->add(AST::FINID, new AST::AST(AST::FINID));
+                        }
                     }
                 );
             }
-
+/*
             {//RightValue
                 RightValue.push_back(
                     [&]{

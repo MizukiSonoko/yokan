@@ -956,20 +956,7 @@ namespace parser{
         
         cur_type = Type::NONE;
 
-        AST::AST* result = match(Rule::TestCore);
-
-        auto it = variableTable.begin();
-        while(it != variableTable.end()){
-            std::cout << "valname:" << it->first << " type:" << it->second <<"\n";
-            it++;
-        }
-/*
-        OBJECT,
-        INT,
-        STRING,
-        DOUBLE,
-        LIST
-*/
+        auto result = match(Rule::Statement);
         return result;
     }
 }
@@ -995,11 +982,12 @@ int main(int argc, char* argv[]){
         }
 
         auto result = parser::parser();
+
         auto eTime = std::chrono::system_clock::now();
         auto timeSpan = eTime - sTime;
         std::cout<< "Time:"<<std::setw(6)<< std::chrono::duration_cast<std::chrono::milliseconds>(timeSpan).count() <<"[ms]\n";
 
-        if(!result){
+        if(result == nullptr){
             std::cout<<"Syntax error! \n";
         }else{
             std::cout<<"Syntax correct! \n";
@@ -1023,7 +1011,6 @@ int main(int argc, char* argv[]){
         }
         */
         parser::AST::AST* result = parser::parser();
-        result->print();
 
         auto eTime = std::chrono::system_clock::now();
         auto timeSpan = eTime - sTime;
@@ -1031,9 +1018,11 @@ int main(int argc, char* argv[]){
         
         if(result == nullptr){
             std::cout<<"Syntax error! \n";
-        }        
+        }else{
+            result->print();
+            delete result;
+        }
         tokens.clear();
-        delete result;
 	}
 	return 0;
 }

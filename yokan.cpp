@@ -269,6 +269,65 @@ namespace parser{
     #endif
     }
 
+    namespace AST{
+        enum AstID{
+            NONE = -1,
+            FINID,
+            NumberID,
+            ListID,
+            OperatorID,
+            BinaryExprID,
+            IdentifireID,
+            ListVariableDeclID,
+            FunctionDeclID,
+            ConditionExprID,
+            IfStatementID,
+            StatementID,
+            RightValueID,
+            VariableDeclID
+        };
+
+        class AST{
+
+                std::map<std::string, AST*> subAST;
+                AstID type;
+                std::string value;
+
+            public:
+                /* Using only speculate.*/
+                bool isCorrect;
+                AST(bool isC):
+                    type(NONE),value(""),isCorrect(isC){};
+
+                AST():type(FINID),value("<FIN>"){};
+                AST(AstID type):type(type){};
+                AST(AstID type,std::string value):type(type),value(value){};
+                ~AST(){
+                    for(auto it = subAST.begin(); it != subAST.end(); it++){ 
+                        delete it->second;
+                    } 
+                }
+                auto add(std::string s, AST* obj)
+                 -> AST*{
+                    this->subAST[s] = obj;
+                    return this;
+                }
+                auto print() 
+                 -> void{
+                    if( subAST.size() == 0 ){
+                        std::cout << type <<":"<< value;
+                    }else{
+                        for(auto it = subAST.begin(); it != subAST.end(); it++){ 
+                            it->second->print();
+                        } 
+                    }
+                    std::cout<<"\n";
+                }
+        };
+    };
+
+
+
     namespace Core{
 
         auto fill(int n)
@@ -343,13 +402,13 @@ namespace parser{
     }
 
     namespace speculate{
-        auto speculate(std::function<bool()> rule)
+        auto speculate(std::function<AST::AST*(bool)> rule)
          -> bool{
 
             Core::mark();
             bool success = false;
             if(
-                rule()
+                rule(true)->isCorrect
             ){
                 success = true;
             }
@@ -357,7 +416,7 @@ namespace parser{
             return success;
         }
 
-        auto speculate(std::vector< std::function<bool()>> rules)
+        auto speculate(std::vector< std::function<AST::AST*(bool)>> rules)
          -> int{
             int case_num = 1;
             for(auto rule : rules){
@@ -400,13 +459,13 @@ namespace parser{
         }
     } 
 
-    auto match(std::vector< std::function<bool()>> rules)
+    auto match(std::vector< std::function<AST::AST*(bool)>> rules)
      -> int{        
         int _result = speculate::speculate(rules);
         if(!_result){
             return 0;
         }
-        rules[ _result-1 ]();
+        rules[ _result-1 ](false);
         return _result;
     }
 
@@ -418,81 +477,29 @@ namespace parser{
         return true;
     }
 
-    namespace AST{
-        enum AstID{
-            FINID,
-            NumberID,
-            ListID,
-            OperatorID,
-            BinaryExprID,
-            IdentifireID,
-            ListVariableDeclID,
-            FunctionDeclID,
-            ConditionExprID,
-            IfStatementID,
-            StatementID,
-            RightValueID,
-            VariableDeclID
-        };
-
-        class AST{
-                std::map<std::string, AST*> subAST;
-                AstID type;
-                std::string value;
-
-                /* Using only speculate.*/
-                bool isCorrect;
-            public:
-                AST(bool isC):isCorrect(isC){}:
-
-                AST():type(FINID),value("<FIN>"){};
-                AST(AstID type):type(type){};
-                AST(AstID type,std::string value):type(type),value(value){};
-                ~AST(){
-                    for(auto it = subAST.begin(); it != subAST.end(); it++){ 
-                        delete it->second;
-                    } 
-                }
-                auto add(std::string s, AST* obj)
-                 -> AST*{
-                    this->subAST[s] = obj;
-                    return this;
-                }
-                auto print() 
-                 -> void{
-                    if( subAST.size() == 0 ){
-                        std::cout << type <<":"<< value;
-                    }else{
-                        for(auto it = subAST.begin(); it != subAST.end(); it++){ 
-                            it->second->print();
-                        } 
-                    }
-                    std::cout<<"\n";
-                }
-        };
-    };
+    
 
     namespace Rule{
         // Rules
-        std::vector< std::function<bool()>> FIN;
-        std::vector< std::function<bool()>> Number;
-        std::vector< std::function<bool()>> List;
-        std::vector< std::function<bool()>> Operator;
-        std::vector< std::function<bool()>> BinaryExpr;
-        std::vector< std::function<bool()>> Identifire;
-        std::vector< std::function<bool()>> ListVariableDecl;
-        std::vector< std::function<bool()>> FunctionDecl;
-        std::vector< std::function<bool()>> ConditionExpr;
-        std::vector< std::function<bool()>> IfStatement;
-        std::vector< std::function<bool()>> Statement;
-        std::vector< std::function<bool()>> RightValue;
-        std::vector< std::function<bool()>> VariableDecl;
+        std::vector< std::function<bool(bool)>> FIN;
+        std::vector< std::function<bool(bool)>> Number;
+        std::vector< std::function<bool(bool)>> List;
+        std::vector< std::function<bool(bool)>> Operator;
+        std::vector< std::function<bool(bool)>> BinaryExpr;
+        std::vector< std::function<bool(bool)>> Identifire;
+        std::vector< std::function<bool(bool)>> ListVariableDecl;
+        std::vector< std::function<bool(bool)>> FunctionDecl;
+        std::vector< std::function<bool(bool)>> ConditionExpr;
+        std::vector< std::function<bool(bool)>> IfStatement;
+        std::vector< std::function<bool(bool)>> Statement;
+        std::vector< std::function<bool(bool)>> RightValue;
+        std::vector< std::function<bool(bool)>> VariableDecl;
 
-        std::vector< std::function<bool()>> TestCore;
+        std::vector< std::function<AST::AST*(bool)>> TestCore;
 
         auto setup()
          -> bool{
-            
+/*            
             {//Fin
                 FIN.push_back( 
                     []{
@@ -775,21 +782,21 @@ namespace parser{
                     }
                 );
             }
-
+*/
             {//TestCore 
                 TestCore.push_back(
-                    [](bool isSpec){
+                    [](bool isSpec) -> AST::AST*{
                         if(isSpec){
                                 if( match(Token::LBRACKET) &&
                                     match(Token::RBRACKET)){
-                                    return new AST(true);
+                                    return new AST::AST(true);
                                 }else{
-                                    return new AST(false);
+                                    return new AST::AST(false);
                                 }
                         }else{
-                            bool val = match(Token::LBRACKET);
-                            bool val = match(Token::LBRACKET);
-                            return new AST(AST::AstID::ListID);
+                            match(Token::LBRACKET);
+                            match(Token::LBRACKET);
+                            return new AST::AST(AST::AstID::ListID);
                         }
                     }
                 );            
@@ -814,7 +821,7 @@ namespace parser{
         
         cur_type = Type::NONE;
 
-        int result = match(Rule::TestCore;
+        int result = match(Rule::TestCore);
 
         auto it = variableTable.begin();
         while(it != variableTable.end()){

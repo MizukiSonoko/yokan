@@ -93,8 +93,6 @@ namespace Lexer{
     }
     auto isSpecial(char c)
      -> bool{
-
-
         std::string str({c});
         if(std::regex_match( str, reg_special)){
             return true;
@@ -437,227 +435,36 @@ namespace parser{
             VariableDeclID
         };
 
-        class FINAST;
-        template<typename T> class NumberAST;
-        class ListAST;
-        class OperatorAST;
-        class BinaryExprAST;
-        class IdentifireAST;
-        class ListVariableDeclAST;
-        class FunctionDeclAST;
-        class ConditionExprAST;
-        class IfStatementAST;
-        class StatementAST;
-        class RightValueAST;
-        class VariableDeclAST;
-
         class AST{
-                AstID ID;
+                std::map<std::string, AST*> subAST;
+                AstID type;
+                std::string value;
             public:
-                AST(AstID id) : ID(id){}
-                virtual ~AST(){}
-                AstID getID() const {
-                    return ID;
+                AST():type(FINID),value("<FIN>"){};
+                AST(AstID type,std::string value):type(type),value(value){};
+                ~AST(){
+                    for(auto it = subAST.begin(); it != subAST.end(); it++){ 
+                        delete it->second;
+                    } 
                 }
-        };
-
-        class FINAST : public AST{
-            public:
-                FINAST() : AST(FINID){};
-                static inline bool classof(FINAST const*){
-                    return true;
+                auto add(std::string s, AST* obj)
+                 -> AST*{
+                    this->subAST[s] = obj;
+                    return this;
                 }
-                static inline bool classof(AST const* ast){
-                    return ast->getID() == FINID;
-                }
-        };
-
-        template<typename T> class NumberAST : public AST{
-                T value;
-            public:
-                NumberAST(T _value) : AST(NumberID), value(_value){};
-                ~NumberAST(){}
-
-                T getValue(){
-                    return value;
-                }
-                
-                static inline bool classof(NumberAST const*){
-                    return true;
-                }
-                static inline bool classof(AST const* ast){
-                    return ast->getID() == NumberID;
-                }
-        };
-        
-        class ListAST : public AST{
-                std::vector<IdentifireAST*> identifireASTs;
-                std::vector<ListVariableDeclAST*> listVariableDecls;
-            public:
-                ListAST() : AST(ListID) {}
-                ~ListAST(){
-                    for(IdentifireAST* element : identifireASTs){
-                        //destructor may not get called....
-                        RELEASE(element);
-                    }
-                    listVariableDecls.clear();
-                    for(ListVariableDeclAST* element : listVariableDecls){
-                        RELEASE(element);
-                    }
-                    listVariableDecls.clear();                    
-                } 
-                void addListVariableDecl(ListVariableDeclAST *listVariableDecl){
-                    listVariableDecls.push_back( listVariableDecl );
-                }
-                void addIdentifireAST(IdentifireAST *identifireAST){
-                    identifireASTs.push_back( identifireAST );
-                }
-                ListVariableDeclAST* getListVariableDecl(int p){
-                    if( p > listVariableDecls.size()){
-                        return nullptr;
+                auto print() 
+                 -> void{
+                    if( subAST.size() == 0 ){
+                        std::cout << type <<":"<< value;
                     }else{
-                        return listVariableDecls.at( p );
+                        for(auto it = subAST.begin(); it != subAST.end(); it++){ 
+                            it->second->print();
+                        } 
                     }
-                }
-                IdentifireAST* getIdentifireAST(int p){
-                    if( p > identifireASTs.size()){
-                        return nullptr;
-                    }else{
-                        return identifireASTs.at( p );
-                    }
-                }
-                unsigned int getListVariableDeclSize(){
-                    return listVariableDecls.size();
-                }
-                unsigned int getIdentifireASTSize(){
-                    return identifireASTs.size();
+                    std::cout<<"\n";
                 }
         };
 
-        class OperatorAST : public AST{
-                std::string ope;
-            public:
-                OperatorAST(std::string _ope) : ope(_ope), AST(OperatorAST{}   
-                
-                std::string getValue(){
-                    return value;
-                }
-                
-                static inline bool classof(OperatorAST const*){
-                    return true;
-                }
-                static inline bool classof(AST const* ast){
-                    return ast->getID() == OperatorID;
-                }             
-        };
-
-        class BinaryExprAST : public AST{
-
-        }; 
-
-        class IdentifireAST : public AST{
-                NumberAST<int>   numberIntAST;
-                NumberAST<float>   numberFloatAST;
-            public:
-                IdentifireAST(int value)  : numberIntAST(value), numberFloatAST(-1.0f), AST(IdentifireID){}
-                IdentifireAST(float value): numberIntAST(-1), numberFloatAST(value), AST(IdentifireID){}
-                ~IdentifireAST(){}
-
-                NumberAST<int> getIntAST(){
-                    return numberIntAST;
-                }
-                NumberAST<float> getFloatAST(){
-                    return numberFloatAST;
-                }
-
-                static inline bool classof(IdentifireAST const*){
-                    return true;
-                }
-                static inline bool classof(AST const* ast){
-                    return ast->getID() == IdentifireID;
-                }       
-        };            
-
-        class ListVariableDeclAST : public AST{
-                std::vector<RightValueAST*> rightValueASTs;
-                std::vector<ListVariableDeclAST*> listVariableDecls;
-            public:
-                ListVariableDeclAST() : AST(ListVariableDeclID) {}
-                ~ListVariableDeclAST(){
-                    for(RightValueAST* element : rightValueASTs){
-                        // destructor may not get called...
-                        RELEASE(element);
-                    }
-                    rightValueASTs.clear();
-
-                    for(ListVariableDeclAST* element : listVariableDecls){
-                        RELEASE(element);
-                    }
-                    listVariableDecls.clear();                    
-                } 
-                void addListVariableDecl(ListVariableDeclAST *listVariableDecl){
-                    listVariableDecls.push_back( listVariableDecl );
-                }
-                void addRightValueAST(RightValueAST *rightValueAST){
-                    rightValueASTs.push_back( rightValueAST );
-                }
-                ListVariableDeclAST* getListVariableDecl(int p){
-                    if( p > listVariableDecls.size()){
-                        return nullptr;
-                    }else{
-                        return listVariableDecls.at( p );
-                    }
-                }
-                RightValueAST* getRightValueASTAST(int p){
-                    if( p > rightValueASTs.size()){
-                        return nullptr;
-                    }else{
-                        return rightValueASTs.at( p );
-                    }
-                }
-                unsigned int getListVariableDeclSize(){
-                    return listVariableDecls.size();
-                }
-                unsigned int getRightValueASTSize(){
-                    return rightValueASTs.size();
-                }
-        };
-
-        class FunctionDeclAST : public AST{
-
-        };
-        class ConditionExprAST : public AST{
-
-        };
-        class IfStatementAST : public AST{
-
-        };
-        class StatementAST : public AST{
-
-        };
-        class VariableDeclAST : public AST{
-
-        };
-        class RightValueAST : public AST{
-                BinaryExprAST* binaryExpr;
-                IdentifireAST* identifireAST;
-                ListAST*       listAST;
-            public:
-                ~RightValueAST();
-        };
-
-        class TranslationAST : public AST{
-            public:    
-                // * TODO 積極的にsetter gettterにしていこうな
-                std::vector<StatementAST*> statementAst; 
-
-                ~TranslationAST(){
-                    for(auto s : statementAst){
-                        delete s;
-                        s = NULL;
-                    }
-                }
-        };
     };
 
     namespace Rule{

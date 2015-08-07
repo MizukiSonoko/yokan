@@ -590,37 +590,64 @@ namespace parser{
                 );
             }
 
-/*
             {//List
                 List.push_back(
-                    []{
-                        bool val1 = match(Token::LBRACKET);
-                        bool val2 = match(Identifire);
-                        bool val3 = match(Token::RBRACKET);
-                        log(2, "List Resullt val1:"+std::to_string(val1)+" val1:"+std::to_string(val2)+" val3:"+std::to_string(val3));
-
-                        return val1 && val2 && val3;
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if( match(Token::LBRACKET) &&
+                                match(Identifire) &&
+                                match(Token::RBRACKET)){
+                                return new AST::AST(true);
+                            }else{
+                                return new AST::AST(false);
+                            }
+                        }else{
+                            match(Token::LBRACKET);
+                            auto _identifire = match(Identifire);
+                            match(Token::RBRACKET);
+                            return (new AST::AST(AST::ListID))
+                                ->add(AST::IdentifireID, _identifire);
+                        }
                     }
                 );
                 List.push_back(
-                    []{
-                        log(1, "List: [ VariableDecl ]");
-                        return 
-                            match(Token::LBRACKET) &&                           
-                            match(ListVariableDecl) &&
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if( match(Token::LBRACKET) &&                           
+                                match(ListVariableDecl) &&
+                                match(Token::RBRACKET)){
+                                return new AST::AST(true);
+                            }else{
+                                return new AST::AST(false);
+                            }
+                        }else{
+                            match(Token::LBRACKET);                        
+                            auto _listVariableDecl = match(ListVariableDecl);
                             match(Token::RBRACKET);
+                            return (new AST::AST(AST::ListID))
+                                ->add(AST::ListVariableDeclID, _listVariableDecl);
+                        }
                     }
                 );
                 List.push_back(
-                    []{
-                        log(1, "List: [ ]");
-                        return 
-                            match(Token::LBRACKET) &&                           
-                            match(Token::RBRACKET);
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if( match(Token::LBRACKET) &&                           
+                                match(Token::RBRACKET)){
+                                return new AST::AST(true);
+                            }else{
+                                return new AST::AST(false);
+                            }
+                        }else{
+                            match(Token::LBRACKET);                       
+                            match(Token::RBRACKET);    
+                            return new AST::AST(AST::ListID);
+                        }
                     }
                 );        
             }
 
+/*
             {//Operator
                 Operator.push_back(
                     []{

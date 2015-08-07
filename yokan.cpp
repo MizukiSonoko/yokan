@@ -845,43 +845,49 @@ namespace parser{
                     }
                 );
             }
-/*
+
             {//RightValue
                 RightValue.push_back(
-                    [&]{
-                        log(2, "RightValue: BinaryExpr");
-                        bool val = match(BinaryExpr);
-                        log(2, "RightValue:BinaryExpr val:"+std::to_string(val));
-                        if(val){
-                            parser::cur_type = Type::OBJECT;
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            return match(BinaryExpr) ?
+                                new AST::AST(true) :
+                                new AST::AST(false);
+                        }else{
+                            auto _binaryExpr = match(BinaryExpr);
+                            return (new AST::AST(AST::RightValueID))
+                                ->add(AST::BinaryExprID, _binaryExpr);
                         }
-                        return val;
                     }
                 );
                 RightValue.push_back(
-                    [&]{
-                        log(2, "RightValue: Identifire");
-                        bool val = match(Identifire);
-                        log(2, "RightValue:Identifire Resullt val:"+std::to_string(val));
-                        if(val){
-                            parser::cur_type = Type::OBJECT;
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            return match(Identifire) ?
+                                new AST::AST(true) :
+                                new AST::AST(false);
+                        }else{
+                            auto _identifire = match(Identifire);
+                            return (new AST::AST(AST::IdentifireID))
+                                ->add(AST::IdentifireID, _identifire);
                         }
-                        return val;
                     }
                 );
                 RightValue.push_back(
-                    [&]{
-                        log(2, "RightValue: List");
-                        bool val = match(List);
-                        log(2, "RightValue:List Resullt val:"+std::to_string(val));
-                        if(val){
-                            parser::cur_type = Type::LIST;
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            return match(List) ?
+                                new AST::AST(true) :
+                                new AST::AST(false);
+                        }else{
+                            auto _list = match(List);
+                            return (new AST::AST(AST::ListID))
+                                ->add(AST::ListID, _list);
                         }
-                        return val;
                     }
                 );
             }
-
+/*
             {//VariableDecl
                 VariableDecl.push_back(
                     [&]{

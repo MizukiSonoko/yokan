@@ -540,7 +540,7 @@ namespace parser{
                 );
                 Number.push_back(
                     [](bool isSpec) -> AST::AST*{
-                        if(isSpec){
+                        if(isSpec){                       
                             if( match(Token::NUMBER) ){
                                 return new AST::AST(true);
                             }else{
@@ -655,6 +655,7 @@ namespace parser{
                                 new AST::AST(true) :
                                 new AST::AST(false);                                    
                         }else{
+                            match(Token::OPE_ADD);
                             return new AST::AST(AST::OperatorID,"+");
                         }
                     }
@@ -666,6 +667,7 @@ namespace parser{
                                 new AST::AST(true) :
                                 new AST::AST(false);                                    
                         }else{
+                            match(Token::OPE_SUB);
                             return new AST::AST(AST::OperatorID,"-");
                         }
                     }
@@ -677,6 +679,7 @@ namespace parser{
                                 new AST::AST(true) :
                                 new AST::AST(false);                                    
                         }else{
+                            match(Token::OPE_MUL);
                             return new AST::AST(AST::OperatorID,"*");
                         }
                     }
@@ -688,6 +691,7 @@ namespace parser{
                                 new AST::AST(true) :
                                 new AST::AST(false);                                    
                         }else{
+                            match(Token::OPE_DIV);
                             return new AST::AST(AST::OperatorID,"/");
                         }
                     }
@@ -708,7 +712,8 @@ namespace parser{
                         }else{
                             auto _identifire = match(Identifire);
                             auto _operator = match(Operator);
-                            auto _binaryExpr = match(BinaryExpr);                            
+                            auto _binaryExpr = match(BinaryExpr);      
+
                             return (new AST::AST(AST::BinaryExprID))
                                 ->add(AST::IdentifireID, _identifire)
                                 ->add(AST::OperatorID, _operator)
@@ -719,9 +724,9 @@ namespace parser{
                 BinaryExpr.push_back(
                     [](bool isSpec) -> AST::AST*{
                         if(isSpec){
-                            if ( match(Identifire) &&
-                                 match(Operator) &&
-                                 match(Identifire)){
+                            if( match(Identifire) &&
+                                match(Operator) &&
+                                match(Identifire)){
                                 return new AST::AST(true);   
                             }else{
                                 return new AST::AST(false);
@@ -730,6 +735,7 @@ namespace parser{
                             auto _identifire1 = match(Identifire);
                             auto _operator = match(Operator);
                             auto _identifire2 = match(Identifire);                            
+
                             return (new AST::AST(AST::BinaryExprID))
                                 ->add(AST::IdentifireID, _identifire1)
                                 ->add(AST::OperatorID, _operator)
@@ -936,7 +942,6 @@ namespace parser{
                     }
                 );            
             }
-
             return true;
         }        
     }

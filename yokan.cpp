@@ -553,22 +553,39 @@ namespace parser{
                     }
                 );
             }
-/*
+
             {//ListVariableDecl
                 ListVariableDecl.push_back(
-                    []{
-                        log(1, "ListVariableDecl: RightValue, ListVariableDecl");
-                        return
-                            match(RightValue) &&
-                            match(Token::COMMA) &&
-                            match(ListVariableDecl);
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if( match(RightValue) &&
+                                match(Token::COMMA) &&
+                                match(ListVariableDecl)){
+                                return new AST::AST(true);
+                            }else{
+                                return new AST::AST(false);
+                            }
+                        }else{
+                            auto _rightValue = match(RightValue);
+                            auto _listVaariableDecl = match(ListVariableDecl);
+                            return (new AST::AST(AST::ListVariableDeclID))
+                                ->add("RightValue", _rightValue)
+                                ->add("ListVariableDecl", _listVaariableDecl);
+                        }
                     }
                 );
                 ListVariableDecl.push_back(
-                    []{
-                        log(1, "ListVariableDecl: RightValue");
-                        return
-                            match(RightValue);
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if( match(RightValue) ){
+                                return new AST::AST(true);
+                            }else{
+                                return new AST::AST(false);
+                            }
+                        }else{
+                            return (new AST::AST(AST::ListVariableDeclID))
+                                ->add("RightValue",match(RightValue));
+                        }
                     }
                 );
             }
@@ -603,7 +620,7 @@ namespace parser{
                     }
                 );        
             }
-
+/*
             {//Operator
                 Operator.push_back(
                     []{

@@ -290,7 +290,7 @@ namespace parser{
 
         class AST{
 
-                std::map<AstID, AST*> subAST;
+                std::multimap<AstID, AST*> subAST;
                 AstID type;
                 std::string value;
 
@@ -310,19 +310,40 @@ namespace parser{
                 }
                 auto add(AstID type, AST* obj)
                  -> AST*{
-                    this->subAST[type] = obj;
+                    this->subAST.insert(std::make_pair( type, obj));
                     return this;
                 }
-                auto print() 
+                auto print(int pos) 
                  -> void{
                     if( subAST.size() == 0 ){
-                        std::cout << type <<":"<< value;
+                        log(pos, AstID2s(type) + ":" + value );
                     }else{
-                        for(auto it = subAST.begin(); it != subAST.end(); it++){ 
-                            it->second->print();
+                        log(pos, AstID2s(type) + ":" + value );
+                        for(auto it = subAST.begin(); it != subAST.end(); ++it){ 
+                            it->second->print(pos + 2);
                         } 
                     }
-                    std::cout<<"\n";
+                }
+
+                // For debug.
+                std::string AstID2s(AstID id){
+                    switch(id){
+                    case NONE: return "NONE";
+                    case FINID: return "Fin";
+                    case NameID: return "Name";
+                    case NumberID: return "Number";
+                    case ListID: return "List";
+                    case OperatorID: return "Operator";
+                    case BinaryExprID: return "BinaryExpr";
+                    case IdentifireID: return "Identifire";
+                    case ListVariableDeclID: return "ListVariableDecl";
+                    case FunctionDeclID: return "functionTable";
+                    case ConditionExprID: return "ConditionExpr";
+                    case IfStatementID: return "IfStatement";
+                    case StatementID: return "Statement";
+                    case RightValueID: return "RightValue";
+                    case VariableDeclID: return "VariableDecl";
+                    }
                 }
         };
     };
@@ -422,7 +443,6 @@ namespace parser{
             int case_num = 1;
             for(auto rule : rules){
                 if(speculate(rule)){
-                    log(3,"#speculate "+std::to_string(case_num));
                     return case_num;
                 }
                 case_num ++;
@@ -467,7 +487,6 @@ namespace parser{
             return nullptr;
         }
         return rules[ _result-1 ](false);
-        ;
     }
 
     auto defVariable(std::string val_name)
@@ -510,7 +529,7 @@ namespace parser{
                                 return new AST::AST(false);
                             }
                         }else{
-                            return new AST::AST(AST::FINID);
+                            return new AST::AST(AST::FINID,"<FIN>");
                         }
                     }
                 );
@@ -567,6 +586,7 @@ namespace parser{
                             }
                         }else{
                             auto _rightValue = match(RightValue);
+                            match(Token::COMMA);
                             auto _listVaariableDecl = match(ListVariableDecl);
                             return (new AST::AST(AST::ListVariableDeclID))
                                 ->add(AST::RightValueID, _rightValue)
@@ -641,7 +661,7 @@ namespace parser{
                         }else{
                             match(Token::LBRACKET);                       
                             match(Token::RBRACKET);    
-                            return new AST::AST(AST::ListID);
+                            return new AST::AST(AST::ListID, "[]");
                         }
                     }
                 );        
@@ -713,7 +733,6 @@ namespace parser{
                             auto _identifire = match(Identifire);
                             auto _operator = match(Operator);
                             auto _binaryExpr = match(BinaryExpr);      
-
                             return (new AST::AST(AST::BinaryExprID))
                                 ->add(AST::IdentifireID, _identifire)
                                 ->add(AST::OperatorID, _operator)
@@ -875,7 +894,7 @@ namespace parser{
                                 new AST::AST(false);
                         }else{
                             auto _identifire = match(Identifire);
-                            return (new AST::AST(AST::IdentifireID))
+                            return (new AST::AST(AST::RightValueID))
                                 ->add(AST::IdentifireID, _identifire);
                         }
                     }
@@ -1024,7 +1043,7 @@ int main(int argc, char* argv[]){
         if(result == nullptr){
             std::cout<<"Syntax error! \n";
         }else{
-            result->print();
+            result->print(0);
             delete result;
         }
         tokens.clear();

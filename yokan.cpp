@@ -499,15 +499,23 @@ namespace parser{
 
         auto setup()
          -> bool{
-/*            
+
             {//Fin
                 FIN.push_back( 
-                    []{
-                        return match(Token::FIN);            
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if( match(Token::FIN) ){
+                                return new AST::AST(true);
+                            }else{
+                                return new AST::AST(false);
+                            }
+                        }else{
+                            return new AST::AST(AST::FINID);
+                        }
                     }
                 );
             }
-*/
+
             {//Number
                 Number.push_back(
                     [](bool isSpec) -> AST::AST*{

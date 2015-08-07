@@ -273,6 +273,7 @@ namespace parser{
         enum AstID{
             NONE = -1,
             FINID,
+            NameID,
             NumberID,
             ListID,
             OperatorID,
@@ -887,24 +888,33 @@ namespace parser{
                     }
                 );
             }
-/*
+
             {//VariableDecl
                 VariableDecl.push_back(
-                    [&]{
-                            bool val1 = match(Token::NAME);
-                            parser::cur_val_name = curString;
-                            bool val2 = match(Token::EQUAL);
-                            bool val3 = match(RightValue);
-                            bool val4 = match(Token::FIN);
-
-                            variableTable.insert({cur_val_name,parser::cur_type});
-
-                            log(2, "VariableDecl Resullt val1:"+std::to_string(val1)+" val1:"+std::to_string(val2)+" val3:"+std::to_string(val3)+" val4:"+std::to_string(val4));
-                            return val1 && val2 && val3 && val4;
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if( match(Token::NAME) &&
+                                match(Token::EQUAL) &&
+                                match(RightValue) &&
+                                match(Token::FIN)){
+                                return new AST::AST(true);
+                            }else{
+                                return new AST::AST(false);
+                            }
+                        }else{
+                            match(Token::NAME);
+                            auto _name = curString;
+                            match(Token::EQUAL);
+                            auto _rightValue = match(RightValue);
+                            match(Token::FIN);
+                            return (new AST::AST(AST::VariableDeclID))
+                                ->add(AST::NameID, new AST::AST(AST::NameID, _name))
+                                ->add(AST::RightValueID, _rightValue);
+                        }
                     }
                 );
             }
-*/
+
             {//TestCore 
                 TestCore.push_back(
                     [](bool isSpec) -> AST::AST*{

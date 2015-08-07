@@ -693,27 +693,53 @@ namespace parser{
                     }
                 );
             }
-/*
+
             {//BinaryExpr
 
                 BinaryExpr.push_back(
-                     []{
-                        return 
-                            match(Identifire) &&
-                            match(Operator) &&
-                            match(BinaryExpr);
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if ( match(Identifire) &&
+                                 match(Operator) &&
+                                 match(BinaryExpr)){
+                                return new AST::AST(true);   
+                            }else{
+                                return new AST::AST(false);
+                            }
+                        }else{
+                            auto _identifire = match(Identifire);
+                            auto _operator = match(Operator);
+                            auto _binaryExpr = match(BinaryExpr);                            
+                            return (new AST::AST(AST::BinaryExprID))
+                                ->add(AST::IdentifireID, _identifire)
+                                ->add(AST::OperatorID, _operator)
+                                ->add(AST::BinaryExprID, _binaryExpr);
+                        }
                     }
                 );
                 BinaryExpr.push_back(
-                    []{
-                        return 
-                            match(Identifire) &&
-                            match(Operator) &&
-                            match(Identifire);
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if ( match(Identifire) &&
+                                 match(Operator) &&
+                                 match(Identifire)){
+                                return new AST::AST(true);   
+                            }else{
+                                return new AST::AST(false);
+                            }
+                        }else{
+                            auto _identifire1 = match(Identifire);
+                            auto _operator = match(Operator);
+                            auto _identifire2 = match(Identifire);                            
+                            return (new AST::AST(AST::BinaryExprID))
+                                ->add(AST::IdentifireID, _identifire1)
+                                ->add(AST::OperatorID, _operator)
+                                ->add(AST::IdentifireID, _identifire2);                            
+                        }
                     }
                 );
             }
-*/
+
             {//Identifire
                 Identifire.push_back(
                     [](bool isSpec) -> AST::AST*{

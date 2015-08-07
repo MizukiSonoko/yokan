@@ -481,19 +481,19 @@ namespace parser{
 
     namespace Rule{
         // Rules
-        std::vector< std::function<bool(bool)>> FIN;
-        std::vector< std::function<bool(bool)>> Number;
-        std::vector< std::function<bool(bool)>> List;
-        std::vector< std::function<bool(bool)>> Operator;
-        std::vector< std::function<bool(bool)>> BinaryExpr;
-        std::vector< std::function<bool(bool)>> Identifire;
-        std::vector< std::function<bool(bool)>> ListVariableDecl;
-        std::vector< std::function<bool(bool)>> FunctionDecl;
-        std::vector< std::function<bool(bool)>> ConditionExpr;
-        std::vector< std::function<bool(bool)>> IfStatement;
-        std::vector< std::function<bool(bool)>> Statement;
-        std::vector< std::function<bool(bool)>> RightValue;
-        std::vector< std::function<bool(bool)>> VariableDecl;
+        std::vector< std::function<AST::AST*(bool)>> FIN;
+        std::vector< std::function<AST::AST*(bool)>> Number;
+        std::vector< std::function<AST::AST*(bool)>> List;
+        std::vector< std::function<AST::AST*(bool)>> Operator;
+        std::vector< std::function<AST::AST*(bool)>> BinaryExpr;
+        std::vector< std::function<AST::AST*(bool)>> Identifire;
+        std::vector< std::function<AST::AST*(bool)>> ListVariableDecl;
+        std::vector< std::function<AST::AST*(bool)>> FunctionDecl;
+        std::vector< std::function<AST::AST*(bool)>> ConditionExpr;
+        std::vector< std::function<AST::AST*(bool)>> IfStatement;
+        std::vector< std::function<AST::AST*(bool)>> Statement;
+        std::vector< std::function<AST::AST*(bool)>> RightValue;
+        std::vector< std::function<AST::AST*(bool)>> VariableDecl;
 
         std::vector< std::function<AST::AST*(bool)>> TestCore;
 
@@ -507,24 +507,45 @@ namespace parser{
                     }
                 );
             }
-
+*/
             {//Number
                 Number.push_back(
-                    []{
-                        return
-                            match(Token::NUMBER) &&
-                            match(Token::PERIOD) &&
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if(
+                                match(Token::NUMBER) &&
+                                match(Token::PERIOD) &&
+                                match(Token::NUMBER)){
+                                return new AST::AST(true);
+                            }else{
+                                return new AST::AST(false);
+                            }
+                        }else{
                             match(Token::NUMBER);
+                            std::string _int = curString;
+                            match(Token::PERIOD);
+                            match(Token::NUMBER);
+                            std::string _frac = curString;
+                            return new AST::AST(AST::NumberID, _int + "." + _frac);
+                        }
                     }
                 );
                 Number.push_back(
-                    []{
-                        return 
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if( match(Token::NUMBER) ){
+                                return new AST::AST(true);
+                            }else{
+                                return new AST::AST(false);                                
+                            }
+                        }else{
                             match(Token::NUMBER);
+                            return new AST::AST(AST::NumberID, curString);
+                        }
                     }
                 );
             }
-
+/*
             {//ListVariableDecl
                 ListVariableDecl.push_back(
                     []{
@@ -617,20 +638,40 @@ namespace parser{
                     }
                 );
             }
-
+*/
             {//Identifire
                 Identifire.push_back(
-                    []{
-                        return match(Number);
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if ( match(Number) ){
+                                return new AST::AST(true);
+                            }else{
+                                return new AST::AST(false);
+                            }
+                        }else{
+                            AST::AST* _number = match(Number);
+                            return (new AST::AST(AST::IdentifireID))
+                                ->add("Number", _number);
+                        }
                     }
                 );
-                Identifire.push_back(
-                    []{
-                        return match(Token::NAME);
+                Identifire.push_back(                    
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            if ( match(Token::NAME) ){
+                                return new AST::AST(true);
+                            }else{
+
+                                return new AST::AST(false);
+                            }
+                        }else{
+                            match(Token::NAME);
+                            return new AST::AST(AST::IdentifireID, curString);
+                        }
                     }
                 );
             }
-
+/*
             {//FunctionDecl
                 FunctionDecl.push_back(
                     []{
@@ -788,6 +829,7 @@ namespace parser{
                     [](bool isSpec) -> AST::AST*{
                         if(isSpec){
                                 if( match(Token::LBRACKET) &&
+                                    match(Identifire) &&
                                     match(Token::RBRACKET)){
                                     return new AST::AST(true);
                                 }else{
@@ -795,8 +837,10 @@ namespace parser{
                                 }
                         }else{
                             match(Token::LBRACKET);
+                            AST::AST* _identifire = match(Identifire);
                             match(Token::LBRACKET);
-                            return new AST::AST(AST::AstID::ListID);
+                            return (new AST::AST(AST::AstID::ListID))
+                                ->add("IdentifireID", _identifire);
                         }
                     }
                 );            
@@ -882,10 +926,14 @@ int main(int argc, char* argv[]){
         auto sTime = std::chrono::system_clock::now();
 
 		tokens = Lexer::lexer(line);
+        /*
         for(auto t : tokens){
             std::cout <<"\""<< t.getName() <<"\"  "<< t.getType() << "\n";
         }
+        */
         parser::AST::AST* result = parser::parser();
+        result->print();
+
         auto eTime = std::chrono::system_clock::now();
         auto timeSpan = eTime - sTime;
         std::cout<< "Time: "<<std::setw(6)<< std::chrono::duration_cast<std::chrono::milliseconds>(timeSpan).count() <<"[ms]\n";
@@ -894,6 +942,7 @@ int main(int argc, char* argv[]){
             std::cout<<"Syntax error! \n";
         }        
         tokens.clear();
+        delete result;
 	}
 	return 0;
 }

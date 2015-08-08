@@ -237,15 +237,6 @@ namespace Lexer{
 
 namespace parser{
 
-    enum Type{
-        NONE,
-        OBJECT,
-        INT,
-        STRING,
-        DOUBLE,
-        LIST
-    };
-
     bool isFirst = true;
 
     int buf_index = 0;
@@ -254,11 +245,10 @@ namespace parser{
     std::vector<Token> overHeadTokens;
     std::string         curString;
 
-    std::map<std::string, Type> variableTable;
+    std::map<std::string, int> variableTable;
     std::map<std::string, int> functionTable;
 
     std::string cur_val_name;
-    Type        cur_type;
 
     void log(int layour, std::string msg){
     #ifdef DEBUG
@@ -324,6 +314,22 @@ namespace parser{
                         } 
                     }
                 }
+                bool is(AstID id){
+                    return id == type;
+                }
+                bool has(AstID id){
+                    return subAST.find(id) != subAST.end();
+                }
+                std::list<AST*> get(AstID id){
+                    std::list<AST*> res;
+                    auto it  = subAST.lower_bound(id);
+                    auto end = subAST.upper_bound(id);
+                    while(it != end){
+                        res.push_back( it-> second);
+                        ++it;
+                    }                       
+                    return res;
+                } 
 
                 // For debug.
                 std::string AstID2s(AstID id){
@@ -498,7 +504,6 @@ namespace parser{
     }
 
     
-
     namespace Rule{
         // Rules
         std::vector< std::function<AST::AST*(bool)>> FIN;
@@ -587,10 +592,10 @@ namespace parser{
                         }else{
                             auto _rightValue = match(RightValue);
                             match(Token::COMMA);
-                            auto _listVaariableDecl = match(ListVariableDecl);
+                            auto _listVariableDecl = match(ListVariableDecl);
                             return (new AST::AST(AST::ListVariableDeclID))
                                 ->add(AST::RightValueID, _rightValue)
-                                ->add(AST::ListVariableDeclID, _listVaariableDecl);
+                                ->add(AST::ListVariableDeclID, _listVariableDecl);
                         }
                     }
                 );
@@ -907,7 +912,7 @@ namespace parser{
                                 new AST::AST(false);
                         }else{
                             auto _list = match(List);
-                            return (new AST::AST(AST::ListID))
+                            return (new AST::AST(AST::RightValueID))
                                 ->add(AST::ListID, _list);
                         }
                     }
@@ -929,6 +934,9 @@ namespace parser{
                         }else{
                             match(Token::NAME);
                             auto _name = curString;
+                            
+                            variableTable[curString] = 1;
+
                             match(Token::EQUAL);
                             auto _rightValue = match(RightValue);
                             match(Token::FIN);
@@ -965,6 +973,10 @@ namespace parser{
         }        
     }
 
+    auto check(AST::AST* ast)
+     -> void{
+
+    }
     auto parser()
      -> AST::AST*{
         buf_index = 0;
@@ -978,13 +990,10 @@ namespace parser{
             isFirst = false;
         }
         
-        cur_type = Type::NONE;
-
         auto result = match(Rule::Statement);
         return result;
     }
 }
-
 int main(int argc, char* argv[]){	
 
     std::ifstream ifs;
@@ -1001,20 +1010,16 @@ int main(int argc, char* argv[]){
         auto sTime = std::chrono::system_clock::now();
         tokens = Lexer::lexer(data);
 
-        for(auto t : tokens){
-            std::cout <<"\""<< t.getName() <<"\"  "<< t.getType() << "\n";
-        }
-
-        auto result = parser::parser();
-
+        parser::AST::AST* result = parser::parser();
         auto eTime = std::chrono::system_clock::now();
         auto timeSpan = eTime - sTime;
-        std::cout<< "Time:"<<std::setw(6)<< std::chrono::duration_cast<std::chrono::milliseconds>(timeSpan).count() <<"[ms]\n";
-
+        std::cout<< "Time: "<<std::setw(6)<< std::chrono::duration_cast<std::chrono::milliseconds>(timeSpan).count() <<"[ms]\n";
+        
         if(result == nullptr){
             std::cout<<"Syntax error! \n";
         }else{
-            std::cout<<"Syntax correct! \n";
+            result->print(0);
+            delete result;
         }
 
         return 0;
@@ -1029,11 +1034,7 @@ int main(int argc, char* argv[]){
         auto sTime = std::chrono::system_clock::now();
 
 		tokens = Lexer::lexer(line);
-        /*
-        for(auto t : tokens){
-            std::cout <<"\""<< t.getName() <<"\"  "<< t.getType() << "\n";
-        }
-        */
+
         parser::AST::AST* result = parser::parser();
 
         auto eTime = std::chrono::system_clock::now();

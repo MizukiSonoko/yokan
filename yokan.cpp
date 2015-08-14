@@ -283,7 +283,6 @@ namespace parser{
                 std::multimap<AstID, AST*> subAST;
                 AstID type;
                 std::string value;
-
             public:
                 /* Using only speculate.*/
                 bool isCorrect;
@@ -313,6 +312,9 @@ namespace parser{
                             it->second->print(pos + 2);
                         } 
                     }
+                }
+                std::multimap<AstID, AST*> getSubAST(){
+                    return subAST;
                 }
                 bool is(AstID id){
                     return id == type;
@@ -352,6 +354,17 @@ namespace parser{
                     }
                 }
         };
+
+        auto walk(AST* ast) 
+         -> void{
+            if( ast->getSubAST().size() == 0 ){
+                // * TODO * parent check.
+            }else{
+                for(auto it = ast->getSubAST().begin(); it != ast->getSubAST().end(); ++it){ 
+                    walk(it->second);
+                } 
+            }
+        }
     };
 
 

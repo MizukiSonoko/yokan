@@ -41,6 +41,7 @@ class Token{
         COMMA,
         PERIOD,
         CARET,
+        AT_SIGN,
         DQUOTATION,
         EQUAL,
         OPE_ADD, 
@@ -185,8 +186,11 @@ namespace Lexer{
                     tokens.push_back(Token(Token::PERIOD,"."));
                     break;
                 case '^':
-                    tokens.push_back(Token(Token::CARET,"^"));
+                    tokens.push_back(Token(Token::CARET,"^"));                    
                     break;
+                case '@':
+                    tokens.push_back(Token(Token::AT_SIGN,"@"));
+                    break;                    
                 case '=':
                     tokens.push_back(Token(Token::EQUAL,"="));
                     break;
@@ -259,6 +263,15 @@ namespace parser{
     #endif
     }
 
+
+    auto defVariable(std::string val_name)
+         -> bool{
+        if(variableTable.find(val_name) == variableTable.end()){
+            return false;
+        }
+        return true;
+    }
+
     namespace AST{
         enum AstID{
             NONE = -1,
@@ -322,8 +335,13 @@ namespace parser{
                 bool has(AstID id){
                     return subAST.find(id) != subAST.end();
                 }
-                std::list<AST*> get(AstID id){
-                    std::list<AST*> res;
+
+                std::string getValue(){
+                    return value;
+                }
+
+                std::vector<AST*> get(AstID id){
+                    std::vector<AST*> res;
                     auto it  = subAST.lower_bound(id);
                     auto end = subAST.upper_bound(id);
                     while(it != end){
@@ -353,21 +371,24 @@ namespace parser{
                     case VariableDeclID: return "VariableDecl";
                     }
                 }
+
+                auto walk() 
+                 -> void{
+                    if( subAST.size() != 0 ){
+                        if(this->type == VariableDeclID){
+                            std::cout<<" variable decl\n";
+                            auto name = get(NameID).at(0)->getValue();
+                            std::cout<<"Name is "<< name << std::endl;
+                        }
+                        for(auto it = subAST.begin(); it != subAST.end(); ++it){ 
+                            it->second->walk();
+                        }
+                    }
+                }
         };
 
-        auto walk(AST* ast) 
-         -> void{
-            if( ast->getSubAST().size() == 0 ){
-                // * TODO * parent check.
-            }else{
-                for(auto it = ast->getSubAST().begin(); it != ast->getSubAST().end(); ++it){ 
-                    walk(it->second);
-                } 
-            }
-        }
-    };
 
-
+   };
 
     namespace Core{
 
@@ -507,15 +528,6 @@ namespace parser{
         }
         return rules[ _result-1 ](false);
     }
-
-    auto defVariable(std::string val_name)
-     -> bool{
-        if(variableTable.find(val_name) == variableTable.end()){
-            return false;
-        }
-        return true;
-    }
-
     
     namespace Rule{
         // Rules
@@ -815,7 +827,7 @@ namespace parser{
                 );
             }
 
-/*
+            /*
             {//ConditionExpr
                 ConditionExpr.push_back(
                     []{
@@ -848,7 +860,7 @@ namespace parser{
                     }
                 );
             }
-*/
+        */
             {//Statement
 
                 Statement.push_back(
@@ -947,7 +959,7 @@ namespace parser{
                         }else{
                             match(Token::NAME);
                             auto _name = curString;
-                            
+                            log(0,"define "+ curString);
                             variableTable[curString] = 1;
 
                             match(Token::EQUAL);
@@ -985,11 +997,15 @@ namespace parser{
             return true;
         }        
     }
-
-    auto check(AST::AST* ast)
-     -> void{
-
+/*
+    namespace CodeGen{
+        void CodeGen(){
+            llvm::LLVMContext& context = llvm::getGlobalContext();
+            llvm::Module *module = new llvm::Module("top", context);
+            llvm::IRBuilder<> builder(context); 
+        }
     }
+*/
     auto parser()
      -> AST::AST*{
         buf_index = 0;
@@ -1007,6 +1023,7 @@ namespace parser{
         return result;
     }
 }
+
 int main(int argc, char* argv[]){	
 
     std::ifstream ifs;
@@ -1041,6 +1058,7 @@ int main(int argc, char* argv[]){
 	std::string line;
     std::string term = ">>> ";
 	while(true){
+        std::cout<<"Start \n";
 		std::cout<<term;
 		std::getline(std::cin, line);
 
@@ -1057,10 +1075,14 @@ int main(int argc, char* argv[]){
         if(result == nullptr){
             std::cout<<"Syntax error! \n";
         }else{
-            result->print(0);
+
+            result->print(0);            
+            std::cout<<"Syntax OK! \n";        
+            result->walk();
+            std::cout<<"Syntax OK!!! \n";            
             delete result;
         }
         tokens.clear();
-	}
+    }
 	return 0;
 }

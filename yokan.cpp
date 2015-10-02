@@ -372,6 +372,39 @@ namespace parser{
                     }
                 }
 
+                     auto execBinary(std::string ope,int a,int b)
+                      -> int {
+                        int result = -1;
+                        if(ope == "+"){
+                            result = a + b;
+                        }else if(ope == "-"){
+                            result = a - b;
+                        }else if(ope == "*"){
+                            result = a * b;
+                        }else if(ope == "/"){
+                            result = a / b;
+                        }
+                        return result;
+                     }
+
+//                namespace binaryExpr{
+                    auto binaryExpr()
+                     -> void{
+                        auto ope = get(OperatorID).at(0)->getValue();
+                        std::cout<<"operator is "<< ope << std::endl;
+                        auto identifires = get(IdentifireID);
+
+                        std::cout<<"size of identifires is "<< identifires.size() << std::endl;
+                        if(identifires.size() == 2){
+                            std::cout <<"result = "<<
+                                execBinary(ope, 
+                                    std::stoi(identifires.at(0)->get(NumberID).at(0)->getValue()),
+                                    std::stoi(identifires.at(1)->get(NumberID).at(0)->getValue())) << "\n";
+                        }
+                     }
+                     
+  //              };
+
                 auto walk() 
                  -> void{
                     if( subAST.size() != 0 ){
@@ -379,14 +412,18 @@ namespace parser{
                             std::cout<<" variable decl\n";
                             auto name = get(NameID).at(0)->getValue();
                             std::cout<<"Name is "<< name << std::endl;
+                            std::vector<AST*> rightValue = get(RightValueID);
+                            
+                        }else if(this->type == BinaryExprID){
+                             binaryExpr();
                         }
+
                         for(auto it = subAST.begin(); it != subAST.end(); ++it){ 
                             it->second->walk();
                         }
                     }
                 }
         };
-
 
    };
 
@@ -997,15 +1034,15 @@ namespace parser{
             return true;
         }        
     }
-/*
-    namespace CodeGen{
-        void CodeGen(){
-            llvm::LLVMContext& context = llvm::getGlobalContext();
-            llvm::Module *module = new llvm::Module("top", context);
-            llvm::IRBuilder<> builder(context); 
+    /*
+        namespace CodeGen{
+            void CodeGen(){
+                llvm::LLVMContext& context = llvm::getGlobalContext();
+                llvm::Module *module = new llvm::Module("top", context);
+                llvm::IRBuilder<> builder(context); 
+            }
         }
-    }
-*/
+    */
     auto parser()
      -> AST::AST*{
         buf_index = 0;

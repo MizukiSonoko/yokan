@@ -24,16 +24,21 @@ Yokan is a thick, jellied dessert made of red bean paste, agar, and sugar. It is
 
 ## Rules
  
-#Basic
+###Basic
 
 - FIN
 ```
  <FIN> ::= "FIN" 
 ```
 
-- NUMBER
+- NUMBER (int)
 ```
  <NUMBER> ::= [0-9] {[0-9]}
+```
+
+- NUMBER (float)
+```
+ <NUMBER> ::= <NUMBER>.<NUMBER>
 ```
 
 - CHAR
@@ -46,7 +51,7 @@ Yokan is a thick, jellied dessert made of red bean paste, agar, and sugar. It is
  <Name>   ::= <CHAR> {<NUMBER> | <CHAR>}
 ```
 
-#My Rules
+### Rules
 
 - Number
 ```

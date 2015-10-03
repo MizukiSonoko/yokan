@@ -388,20 +388,26 @@ namespace parser{
                      }
 
 //                namespace binaryExpr{
-                    auto binaryExpr()
-                     -> void{
-                        auto ope = get(OperatorID).at(0)->getValue();
-                        std::cout<<"operator is "<< ope << std::endl;
-                        auto identifires = get(IdentifireID);
-
-                        std::cout<<"size of identifires is "<< identifires.size() << std::endl;
+                    auto binaryExpr(AST* ast)
+                     -> int{
+                        auto ope = ast->get(OperatorID).at(0)->getValue();
+                        auto identifires = ast->get(IdentifireID);
                         if(identifires.size() == 2){
-                            std::cout <<"result = "<<
-                                execBinary(ope, 
+                                return execBinary(ope, 
                                     std::stoi(identifires.at(0)->get(NumberID).at(0)->getValue()),
-                                    std::stoi(identifires.at(1)->get(NumberID).at(0)->getValue())) << "\n";
+                                    std::stoi(identifires.at(1)->get(NumberID).at(0)->getValue()));
+                        }else if(identifires.size() == 1){
+                                int rightVal = std::stoi(identifires.at(0)->get(NumberID).at(0)->getValue());
+                                int leftVal  = ast->get(BinaryExprID).at(0)->binaryExpr();
+                                return execBinary(ope, rightVal, leftVal);
                         }
+                        return -1;
                      }
+
+                    auto binaryExpr()
+                     -> int{
+                        return binaryExpr(this);
+                    }
                      
   //              };
 
@@ -413,9 +419,13 @@ namespace parser{
                             auto name = get(NameID).at(0)->getValue();
                             std::cout<<"Name is "<< name << std::endl;
                             std::vector<AST*> rightValue = get(RightValueID);
-                            
+                            if(rightValue.at(0)->has(BinaryExprID)){
+                                int result = rightValue.at(0)->get(BinaryExprID).at(0)->binaryExpr();
+                                std::cout <<"result = "<< result <<"\n";
+                            }
                         }else if(this->type == BinaryExprID){
-                             binaryExpr();
+                            int result = binaryExpr();
+                            std::cout <<" result = "<< result <<"\n";
                         }
 
                         for(auto it = subAST.begin(); it != subAST.end(); ++it){ 
@@ -913,6 +923,19 @@ namespace parser{
                         }
                     }
                 );
+                Statement.push_back(
+                    [](bool isSpec) -> AST::AST*{
+                        if(isSpec){
+                            return match(BinaryExpr) ?
+                                new AST::AST(true) :
+                                new AST::AST(false);
+                        }else{
+                            auto _binaryExpr = match(BinaryExpr);
+                            return (new AST::AST(AST::StatementID))
+                                ->add(AST::BinaryExprID, _binaryExpr);
+                        }
+                    }
+                );                
                 /*
                 Statement.push_back(
                     []{

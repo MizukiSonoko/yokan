@@ -519,7 +519,7 @@ namespace parser{
     
     namespace Rule{
         // Rules
-        std::vector< std::function<AST::AST*(bool)>> FIN;
+        std::map<AST::AstID, std::vector< std::function<AST::AST*(bool)>>> rules;
         std::vector< std::function<AST::AST*(bool)>> Number;
         std::vector< std::function<AST::AST*(bool)>> List;
         std::vector< std::function<AST::AST*(bool)>> Operator;
@@ -538,7 +538,7 @@ namespace parser{
          -> bool{
 
             {//Fin
-                FIN.push_back( 
+                rules[AST::FINID].push_back( 
                     [](bool isSpec) -> AST::AST*{
                         if(isSpec){
                             if( match(Token::FIN) ){
@@ -864,25 +864,14 @@ namespace parser{
                         }
                     }
                 );
-                /*
-                Statement.push_back(
-                    []{
-                        bool val = match(IfStatement);
-                        log(2, "Statement:IfStatement Resullt val:"+std::to_string(val));
-                        return val;
-
-                    //  return match(IfStatement);
-                    }
-                );
-                */
                 Statement.push_back(
                     [](bool isSpec) -> AST::AST*{
                         if(isSpec){
-                            return match(FIN) ?
+                            return match(rules[AST::FINID]) ?
                                 new AST::AST(true) :
                                 new AST::AST(false);
                         }else{
-                            match(FIN);
+                            match(rules[AST::FINID]);
                             return (new AST::AST(AST::StatementID))
                                 ->add(AST::FINID, new AST::AST(AST::FINID));
                         }

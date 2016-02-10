@@ -923,33 +923,6 @@ namespace parser{
                         }
                     }
                 );
-<<<<<<< HEAD
-=======
-                Statement.push_back(
-                    [](bool isSpec) -> AST::AST*{
-                        if(isSpec){
-                            return match(BinaryExpr) ?
-                                new AST::AST(true) :
-                                new AST::AST(false);
-                        }else{
-                            auto _binaryExpr = match(BinaryExpr);
-                            return (new AST::AST(AST::StatementID))
-                                ->add(AST::BinaryExprID, _binaryExpr);
-                        }
-                    }
-                );                
-                /*
-                Statement.push_back(
-                    []{
-                        bool val = match(IfStatement);
-                        log(2, "Statement:IfStatement Resullt val:"+std::to_string(val));
-                        return val;
-
-                    //  return match(IfStatement);
-                    }
-                );
-                */
->>>>>>> fea566316586d9de47394d6a513467dc2ece1bb8
                 Statement.push_back(
                     [](bool isSpec) -> AST::AST*{
                         if(isSpec){
